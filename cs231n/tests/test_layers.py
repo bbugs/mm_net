@@ -91,7 +91,7 @@ def run_suite():
                         [2, 2, 1, -5]]) / 4.
 
     suite.run_test(layers.svm_struct_loss(x, y)[0], 5.75, message="Test loss")
-    suite.run_test(layers.svm_struct_loss(x, y)[1], dx_true, message="Test gradient agains pen and paper")
+    suite.run_test(layers.svm_struct_loss(x, y)[1], dx_true, message="Test gradient against pen and paper")
 
     suite.report_results()
 
