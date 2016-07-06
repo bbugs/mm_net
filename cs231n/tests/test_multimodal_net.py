@@ -4,12 +4,12 @@ from cs231n.multimodal import multimodal_net
 import numpy as np
 import math
 
-img_input_dim = 16 # size of cnn
-txt_input_dim = 8  # size of word2vec pretrained vectors
-hidden_dim = 4  # size of multimodal space
+img_input_dim = 13 # size of cnn
+txt_input_dim = 9  # size of word2vec pretrained vectors
+hidden_dim = 7  # size of multimodal space
 
-N_img = 3  # number of regions in the batch
-N_words = 5  # number of words in the batch
+N_img = 17  # number of regions in the batch
+N_words = 25  # number of words in the batch
 
 X_img = np.random.randn(N_img, img_input_dim)
 X_txt = np.random.randn(N_words, txt_input_dim)
@@ -37,7 +37,10 @@ assert np.all(bsem == 0), 'Second layer biases do not seem right'
 
 
 print 'Testing training loss (no regularization)'
-y = np.asarray([0, 4, 1])
+y = np.random.randint(N_words, size=N_img)
 loss, grads = model.loss(X_img, X_txt, y)
+
+print loss
+print grads.keys()
 
 

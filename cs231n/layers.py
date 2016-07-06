@@ -622,6 +622,55 @@ def svm_struct_loss(x, y):
     return loss, dx
 
 
+def mult_forward(x, w):
+    """
+    Computes the forward pass for a multiplication layer layer.
+
+    Inputs:
+    - x: A numpy array containing input data, of shape (d_1, d_2)
+    - w: A numpy array of weights, of shape (d_2, d_3)
+
+    Returns a tuple of:
+    - out: output, of shape (d_1, d_3)
+    - cache: (x, w)
+    """
+    #############################################################################
+    # Implement the affine forward pass. Store the result in out.               #
+    #############################################################################
+    out = np.dot(x, w)  # (d_1, d_3)
+
+    cache = (x, w)
+    return out, cache
+
+
+def mult_backward(dout, cache):
+    """
+    Computes the backward pass for an multiplication layer.
+
+    Inputs:
+    - dout: Upstream derivative, of shape (d_1, d_3)
+    - cache: Tuple of:
+      - x: Input data, of shape (d_1, d_2)
+      - w: Weights, of shape (d_2, d_3)
+
+    Returns a tuple of:
+    - dx: Gradient with respect to x, of shape (d_1, d_2)
+    - dw: Gradient with respect to w, of shape (d_2, d_3)
+    """
+    x, w = cache  # unpack cache values
+
+    #############################################################################
+    # Implement the affine backward pass.                                 #
+    #############################################################################
+
+    dx = np.dot(dout, w.T)  # dx: (d_1, d_2)
+
+    dw = np.dot(x.T, dout)  # dw: (d_2, d_3)
+
+    return dx, dw
+
+
+
 # Sus:
 if __name__ == "__main__":
     #     from cs231n.gradient_check import eval_numerical_gradient, eval_numerical_gradient_array

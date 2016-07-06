@@ -74,14 +74,16 @@ class MultiModalNet(object):
         projected_txt, cache_proj_txt = affine_relu_forward(X_txt, Wsem, bsem)
 
         # Compute the similarity between regions and words
-        sim_region_word = np.dot(projected_imgs, projected_txt.T)
+        sim_region_word, cache_mult = mult_forward(projected_imgs, projected_txt.T)
 
         # If y is None then we are in test mode so just return scores
         #  (ie, similarity between regions and words)
         if y is None:
             return sim_region_word
 
+        ############################################################################
         # Compute the cost with a svm layer (regular svm)
+        ############################################################################
         data_loss, dscores = svm_loss(sim_region_word, y)
 
         reg_loss = 0.5 * self.reg * (np.sum(Wi2s * Wi2s) +
@@ -97,9 +99,11 @@ class MultiModalNet(object):
         ############################################################################
         grads = {}
 
-        dX_img, dWi2s, dbi2s = affine_backward(dscores, cache_proj_imgs)
+        d_proj_imgs, d_proj_txt = mult_backward(dscores, cache_mult)
 
-        dX_txt, dWsem, dbsem = affine_relu_backward(dscores, cache_proj_txt)
+        dX_img, dWi2s, dbi2s = affine_backward(d_proj_imgs, cache_proj_imgs)
+
+        dX_txt, dWsem, dbsem = affine_relu_backward(d_proj_txt.T, cache_proj_txt)
 
         # add the contribution of the regularization term to the gradient
         dWi2s += self.reg * Wi2s
