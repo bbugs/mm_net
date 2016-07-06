@@ -24,6 +24,7 @@ class MultiModalNet(object):
         self.params = {}
         self.reg = reg
         self.h = hidden_dim
+        self.loss_function = None
 
         # Initialize the weights and biases of the two-layer net. Weights    #
         # should be initialized from a Gaussian with standard deviation equal to   #
@@ -36,6 +37,9 @@ class MultiModalNet(object):
         self.params['bi2s'] = np.zeros(hidden_dim)
         self.params['Wsem'] = weight_scale['txt'] * np.random.randn(txt_input_dim, hidden_dim)
         self.params['bsem'] = np.zeros(hidden_dim)
+
+    def set_loss_function(self, f):
+        self.loss_function = f
 
     def loss(self, X_img, X_txt, y=None):
         """
@@ -62,10 +66,13 @@ class MultiModalNet(object):
         # variable.              #
         ############################################################################
 
+        assert self.loss_function
+
         Wi2s = self.params['Wi2s']  # (img_input_dim, hidden_dim)
         bi2s = self.params['bi2s']  # (hidden_dim,)
         Wsem = self.params['Wsem']  # (txt_input_dim, hidden_dim)
         bsem = self.params['bsem']  # (hidden_dim,)
+
 
         # Project images into multimodal space
         projected_imgs, cache_proj_imgs = affine_forward(X_img, Wi2s, bi2s)
@@ -84,7 +91,7 @@ class MultiModalNet(object):
         ############################################################################
         # Compute the cost with a svm layer (regular svm)
         ############################################################################
-        data_loss, dscores = svm_loss(sim_region_word, y)
+        data_loss, dscores = self.loss_function(sim_region_word, y)
 
         reg_loss = 0.5 * self.reg * (np.sum(Wi2s * Wi2s) +
                                      np.sum(Wsem * Wsem))
@@ -112,10 +119,10 @@ class MultiModalNet(object):
         # Store gradients in dictionary
         grads['Wi2s'] = dWi2s
         grads['bi2s'] = dbi2s
-        grads['X_img'] = dX_img
+        # grads['X_img'] = dX_img
         grads['Wsem'] = dWsem
         grads['bsem'] = dbsem
-        grads['X_txt'] = dX_txt
+        # grads['X_txt'] = dX_txt
 
         return loss, grads
 

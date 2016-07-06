@@ -2,6 +2,7 @@ import numpy as np
 
 from cs231n import optim
 
+# TODO: Sus, study the Solver code and see how much it needs to be
 
 class Solver(object):
     """
