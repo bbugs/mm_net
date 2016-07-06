@@ -26,7 +26,7 @@ def affine_forward(x, w, b):
     #############################################################################
     N = x.shape[0]
     D = np.prod(x.shape[1:])
-    x_2d = np.reshape(x, (N, D))  # reshape x to a 2D array
+    x_2d = np.reshape(np.copy(x), (N, D))  # reshape x to a 2D array
     out = np.dot(x_2d, w) + b
 
     #############################################################################
@@ -60,7 +60,7 @@ def affine_backward(dout, cache):
     # D = np.prod(x.shape[1:])
     # x_2d = x.reshape(N, D)  # note numpy arrays are mutable, so I'm not sure what happens here
     # dw = np.dot(x_2d.T, dout)  # x_2d.T is DxN and dout is NxM. Thus dw is DxM
-    dw = np.dot(x.reshape(x.shape[0], np.prod(x.shape[1:])).T, dout)
+    dw = np.dot(np.copy(x).reshape(x.shape[0], np.prod(x.shape[1:])).T, dout)
     db = np.sum(dout, axis=0)
 
     dx = np.dot(dout, w.T).reshape(x.shape)  # N,d1,d2,...,d_d_k
