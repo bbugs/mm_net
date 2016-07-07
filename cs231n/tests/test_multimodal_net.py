@@ -5,6 +5,7 @@ import numpy as np
 import math
 from cs231n.gradient_check import eval_numerical_gradient
 from cs231n.tests.test_utils import rel_error
+from cs231n.layers import *
 
 img_input_dim = 16 # size of cnn
 txt_input_dim = 8  # size of word2vec pretrained vectors
@@ -26,6 +27,7 @@ print weight_scale
 
 model = multimodal_net.MultiModalNet(img_input_dim, txt_input_dim,
                                      hidden_dim, weight_scale=weight_scale, reg=0.0)
+model.set_loss_function(svm_loss)
 
 print 'Testing initialization ... '
 Wi2s_std = abs(model.params['Wi2s'].std() - std_img)
