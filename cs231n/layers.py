@@ -1,5 +1,5 @@
 import numpy as np
-
+from scipy.sparse import coo_matrix
 
 def affine_forward(x, w, b):
     """
@@ -575,12 +575,15 @@ def softmax_loss(x, y):
     return loss, dx
 
 
+
+
+
 def svm_struct_loss(x, y):
     """(np array, np array) -> float, np array
 
     author: susana
 
-    Computes the loss and gradient for softmax classification, where the
+    Computes the loss and gradient for svm classification, where the
     scores of the diagonal are considered correct classes and the rest of
     the elements are wrong classes.
 
@@ -590,7 +593,7 @@ def svm_struct_loss(x, y):
     - y: Vector of labels, of shape (N,) where y[i] is the label for x[i] and
       0 <= y[i] < C
       Note: There is an implicit assumtion that y = np.array(np.arange(N)). This
-      makes that the element of the diagonal are correct.
+      makes that the element of the diagonal are the correct classes.
 
     Returns a tuple of:
     - loss: Scalar giving the loss
@@ -668,6 +671,148 @@ def mult_backward(dout, cache):
     dw = np.dot(x.T, dout)  # dw: (d_2, d_3)
 
     return dx, dw
+
+
+def get_normalization_weights(y):
+    """ np.array -> np.array
+
+    Given a matrix y of size (d1, d2), where each element y[i,j] is either +1 or -1.
+     compute a matrix W as follows
+
+    Example:
+         y = np.array(
+                [[1, 1, -1, -1],
+                 [1, 1, -1, -1],
+                 [-1, -1, 1, 1],
+                 [-1, -1, 1, 1],
+                 [-1, -1, 1, 1]])
+
+        W = np.array(
+            [[0.5 0.5 0.5 0.5],
+            [0.5 0.5 0.5 0.5],
+            [0.33 0.33 0.33 0.33],
+            [0.33 0.33 0.33 0.33],
+            [0.33 0.33 0.33 0.33]]
+        )
+
+    """
+    # Create indicator variable MEQ that indicates correct pairs of region-word
+    MEQ = np.zeros(y.shape, dtype=int)
+    MEQ[y == 1] = 1
+    MEQ[y == -1] = 0
+
+    ypos = np.zeros(y.shape)
+    yneg = np.zeros(y.shape)
+
+    ypos[y == 1] = 1
+    yneg[y == -1] = 1
+
+    tmp_pos = ypos / np.sum(ypos, axis=0)
+    tmp_neg = yneg / np.sum(yneg, axis=0)
+
+    W = np.multiply(tmp_pos, MEQ) + np.multiply(tmp_neg, np.logical_not(MEQ))
+
+    return W
+
+
+def perform_mil(x, y):
+    """
+    Inputs:
+    - x: Input data, of shape (n_region, n_words) where x[i, j] is the score for the ith image
+    region and the jth word.
+    - y: Vector of labels, of shape (n_region, n_words) where y[i,j] indicates whether the
+      img region i and the jth word occurred together (y[i,j] = 1), or not (y[i,j]=-1)
+
+    Returns:
+        A new y array, where we assign y = sign(x) only for the correct pairs
+    """
+    y_new = np.copy(y)
+
+    MEQ = np.zeros(y.shape, dtype=int)
+    MEQ[y == 1] = 1
+    MEQ[y == -1] = 0
+
+    fpos = np.multiply(x, MEQ) - 9999 * np.logical_not(MEQ)
+    Ypos = np.sign(fpos)
+
+    # ixbad contains the indices of the columns where no element (of the correct region-word pair) is equal 1.
+    ixbad = np.argwhere(np.logical_not(np.any(Ypos == 1, axis=0))).ravel()
+
+    print ixbad
+
+    if ixbad.size != 0:
+        # get the row id where the bad index happened
+        fmaxi = np.argmax(fpos[:, ixbad], axis=0).ravel()
+        data = 2 * np.squeeze(np.ones(ixbad.shape))
+        Ypos = Ypos + coo_matrix((data, (fmaxi, ixbad)), shape=y.shape)
+
+    # replace the values of the correct region-word pairs with the sign(region' * word)
+    y_new[MEQ] = Ypos[MEQ]  # augment Y in positive bags
+    return y_new
+
+
+def svm_two_classes(x, y, delta=1, do_mil=False, normalize=False):
+    """(np array, np array, int) -> float, np array
+
+    author: susana
+
+    Computes the loss and gradient for softmax classification, where the
+    scores of the diagonal are considered correct classes and the rest of
+    the elements are wrong classes.
+    Each element x[i,j] is considered 1 datapoint. And the element y[i,j] indicates
+    whether x[i,j] belongs to class +1 or -1.
+
+    Inputs:
+    - x: Input data, of shape (n_region, n_words) where x[i, j] is the score for the ith image
+    region and the jth word.
+    - y: Vector of labels, of shape (n_region, n_words) where y[i,j] indicates whether the
+      img region i and the jth word occurred together (y[i,j] = 1), or not (y[i,j]=-1)
+    - delta: how much margin between data points of the two classes.
+
+    Returns a tuple of:
+    - loss: Scalar giving the loss
+    - dx: Gradient of the loss with respect to x
+
+    """
+    Y = np.copy(y)
+    dx = np.zeros(x.shape)
+    norm_weights = np.ones(Y.shape)
+
+    if do_mil:
+        Y = perform_mil(x, Y)
+
+    if normalize:
+        norm_weights = get_normalization_weights(Y)
+
+    margins = np.maximum(0, delta - np.multiply(Y, x))
+
+    weighted_margins = np.multiply(norm_weights, margins)
+    loss = np.sum(weighted_margins)
+
+    dx[margins > 0] = -1 # TODO add the norm weights: * norm_weights
+
+    return loss, dx
+
+
+
+def sigmoid_forward():
+    # TODO
+    pass
+
+
+def sigmoid_backward():
+    # TODO
+    pass
+
+
+def sigmoid_cross_entropy_forward():
+    # TODO
+    pass
+
+
+def sigmoid_cross_entropy_backward():
+    # TODO
+    pass
 
 
 
