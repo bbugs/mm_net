@@ -575,9 +575,6 @@ def softmax_loss(x, y):
     return loss, dx
 
 
-
-
-
 def svm_struct_loss(x, y):
     """(np array, np array) -> float, np array
 
@@ -726,7 +723,7 @@ def perform_mil(x, y):
     Returns:
         A new y array, where we assign y = sign(x) only for the correct pairs
     """
-    y_new = np.copy(y)
+    y_copy = np.copy(y)
 
     MEQ = np.zeros(y.shape, dtype=int)
     MEQ[y == 1] = 1
@@ -738,16 +735,17 @@ def perform_mil(x, y):
     # ixbad contains the indices of the columns where no element (of the correct region-word pair) is equal 1.
     ixbad = np.argwhere(np.logical_not(np.any(Ypos == 1, axis=0))).ravel()
 
-    print ixbad
-
-    if ixbad.size != 0:
+    if ixbad.size != 0:  # check if not empty
         # get the row id where the bad index happened
         fmaxi = np.argmax(fpos[:, ixbad], axis=0).ravel()
         data = 2 * np.squeeze(np.ones(ixbad.shape))
-        Ypos = Ypos + coo_matrix((data, (fmaxi, ixbad)), shape=y.shape)
+        Ypos = Ypos + coo_matrix((data, (fmaxi, ixbad)), shape=y_copy.shape)  # flip from -1 to 1: add 2
 
     # replace the values of the correct region-word pairs with the sign(region' * word)
-    y_new[MEQ] = Ypos[MEQ]  # augment Y in positive bags
+    # y_copy[MEQ==1] = Ypos[MEQ==1] this doesn't work out in numpy, or this y_copy[MEQ] = Ypos[MEQ==1]
+
+    y_new = np.multiply(y_copy, np.logical_not(MEQ)) + np.multiply(MEQ, Ypos)
+
     return y_new
 
 
@@ -767,19 +765,20 @@ def svm_two_classes(x, y, delta=1, do_mil=False, normalize=False):
     region and the jth word.
     - y: Vector of labels, of shape (n_region, n_words) where y[i,j] indicates whether the
       img region i and the jth word occurred together (y[i,j] = 1), or not (y[i,j]=-1)
-    - delta: how much margin between data points of the two classes.
+    - delta: how much margin between data points of the two classes (lmargin in matlab code).
 
     Returns a tuple of:
     - loss: Scalar giving the loss
     - dx: Gradient of the loss with respect to x
 
     """
+    y_copy = np.copy(y)
     Y = np.copy(y)
     dx = np.zeros(x.shape)
-    norm_weights = np.ones(Y.shape)
+    norm_weights = np.ones(y_copy.shape)
 
     if do_mil:
-        Y = perform_mil(x, Y)
+        Y = perform_mil(x, y_copy)
 
     if normalize:
         norm_weights = get_normalization_weights(Y)
@@ -789,7 +788,9 @@ def svm_two_classes(x, y, delta=1, do_mil=False, normalize=False):
     weighted_margins = np.multiply(norm_weights, margins)
     loss = np.sum(weighted_margins)
 
-    dx[margins > 0] = -1 # TODO add the norm weights: * norm_weights
+    # dx = dx - np.multiply(margins > 0, Y)  # without norm_weights
+
+    dx = dx - np.multiply(margins > 0, np.multiply(Y, norm_weights))  # with norm weights
 
     return loss, dx
 
