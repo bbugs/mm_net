@@ -829,7 +829,7 @@ def sigmoid_cross_entropy_loss(z, y):
 
     y_hat = 1.0 / (1.0 + np.exp(-z))
 
-    loss = np.sum(-y * np.log2(y_hat) - (1.0 - y) * np.log2(1.0 - y_hat)) / num_elements
+    loss = -np.sum(y * np.log(y_hat) + (1.0 - y) * np.log(1.0 - y_hat)) / num_elements
 
     dz = (y_hat - y) / num_elements
 

@@ -267,9 +267,6 @@ def test_sigmoid_cross_entropy_loss():
     # compute loss and gradient wrt scores
     loss, dx = layers.sigmoid_cross_entropy_loss(x, y)
     #
-    # correct_loss = 0.9064835704  # pen and paper
-
-    correct_loss = 1.3043201335824406 # pen and paper
 
     # compute numerical gradient
     dx_num = gradient_check.eval_numerical_gradient(
@@ -277,11 +274,13 @@ def test_sigmoid_cross_entropy_loss():
 
     print 'Testing sigmoid_cross_entropy_loss:'
     print 'loss: ', loss
-    print "correct_loss", correct_loss
     print "computed gradient", dx
     print "num gradient", dx_num
     print 'dx error: ', test_utils.rel_error(dx_num, dx)
     print "dx_num - dx computed", dx_num - dx
+
+    assert np.allclose(dx, dx_num, rtol=1e-05, atol=1e-08), \
+        "sigmoid cross entropy did NOT pass gradient test"
 
     return
 
