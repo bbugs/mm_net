@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.sparse import coo_matrix
 
+
 def affine_forward(x, w, b):
     """
     Computes the forward pass for an affine (fully-connected) layer.
@@ -763,7 +764,7 @@ def svm_two_classes(x, y, delta=1, do_mil=False, normalize=False):
     Inputs:
     - x: Input data, of shape (n_region, n_words) where x[i, j] is the score for the ith image
     region and the jth word.
-    - y: Vector of labels, of shape (n_region, n_words) where y[i,j] indicates whether the
+    - y: array of labels, of shape (n_region, n_words) where y[i,j] indicates whether the
       img region i and the jth word occurred together (y[i,j] = 1), or not (y[i,j]=-1)
     - delta: how much margin between data points of the two classes (lmargin in matlab code).
 
@@ -795,26 +796,44 @@ def svm_two_classes(x, y, delta=1, do_mil=False, normalize=False):
     return loss, dx
 
 
-
-def sigmoid_forward():
+def sigmoid_forward(x):
     # TODO
-    pass
+    out = 1.0/ (1.0 + np.exp(-x))
+    return out, np.copy(out)
 
 
-def sigmoid_backward():
+def sigmoid_backward(dout, cache):
     # TODO
-    pass
+
+    dx = cache * (1. - cache) * dout
+
+    return dx
 
 
-def sigmoid_cross_entropy_forward():
-    # TODO
-    pass
+def sigmoid_cross_entropy_loss(z, y):
+    """
+    Inputs:
+    - z: Input data, of shape (N, C) where z[i, j] is the score for the jth class
+      for the ith input.
+    - y: array of labels, the same size as x. y[i,j] indicates whether the jth
+      class is correct for the ith element.
+      Each element in z can have more than one correct class.
 
+    Returns a tuple of:
+    - loss: scalar giving the loss
+    - dz: gradient of the loss with respect to z
 
-def sigmoid_cross_entropy_backward():
-    # TODO
-    pass
+    """
 
+    num_elements = np.prod(z.shape)  # N*C
+
+    y_hat = 1.0 / (1.0 + np.exp(-z))
+
+    loss = np.sum(-y * np.log2(y_hat) - (1.0 - y) * np.log2(1.0 - y_hat)) / num_elements
+
+    dz = (y_hat - y) / num_elements
+
+    return loss, dz
 
 
 # Sus:

@@ -174,6 +174,26 @@ def test_svm_two_classes():
     assert np.allclose(dx, dx_true, rtol=1e-05, atol=1e-08), \
         "svm_two_classes did NOT pass gradient test with normalization and do_mil"
 
+    ##############################################
+    # Test with numerical gradient
+    ##############################################
+    print "\n\nTest with numerical gradient svm_two_classes"
+    loss, dx = layers.svm_two_classes(x, y, delta=1, do_mil=True, normalize=True)
+
+    true_loss = 11.0
+
+    print loss
+    print "true loss", true_loss
+
+    print "computed gradient", dx
+    print "true gradient", dx_true
+
+    # compute numerical gradient
+    dx_num = gradient_check.eval_numerical_gradient(
+        lambda x: layers.svm_two_classes(x, y, delta=1, do_mil=True, normalize=True)[0], x, verbose=False)
+    print "num gradient", dx_num
+    print 'dx error: ', test_utils.rel_error(dx_num, dx)
+
 
 def test_get_normalization_weights():
     y = np.array(
@@ -227,16 +247,56 @@ def test_perform_mil():
         "do_mil did NOT pass test"
 
 
+def test_sigmoid_cross_entropy_loss():
+    """
+    Test svm_struct_loss agains numerical gradient.
+    Note the numerical gradient is right only within a certain number range.
+    I found the numerical gradient is wrong when x is large, e.g., between 1 and 10.
+    When x is between 0 and 1, the numerical gradient is right.
+    """
+
+    # x = np.array([-2, -.5, 0, .4, 1], dtype=np.float64)
+    # y = np.array([1, 0, 1, 0, 1], dtype=np.float64)
+
+    # x = 1e-2*np.random.randn(4, 5)
+
+    x = np.random.uniform(-2, -1, (4,5))
+    y = np.random.randint(0, 2, x.shape)
+    print x
+
+    # compute loss and gradient wrt scores
+    loss, dx = layers.sigmoid_cross_entropy_loss(x, y)
+    #
+    # correct_loss = 0.9064835704  # pen and paper
+
+    correct_loss = 1.3043201335824406 # pen and paper
+
+    # compute numerical gradient
+    dx_num = gradient_check.eval_numerical_gradient(
+        lambda x: layers.sigmoid_cross_entropy_loss(x, y)[0], x, verbose=True, h=1e-4)
+
+    print 'Testing sigmoid_cross_entropy_loss:'
+    print 'loss: ', loss
+    print "correct_loss", correct_loss
+    print "computed gradient", dx
+    print "num gradient", dx_num
+    print 'dx error: ', test_utils.rel_error(dx_num, dx)
+    print "dx_num - dx computed", dx_num - dx
+
+    return
 
 
 if __name__ == "__main__":
-    test_svm_struct_loss()
-    test_svm_struct_loss_with_num_gradient()
 
-    run_suite()
-
-    test_svm_two_classes()
-
-    test_get_normalization_weights()
-
-    test_perform_mil()
+    # TODO: Use the test_suite from test_utils.py
+    # test_svm_struct_loss()
+    # test_svm_struct_loss_with_num_gradient()
+    #
+    # run_suite()
+    #
+    # test_svm_two_classes()
+    #
+    # test_get_normalization_weights()
+    #
+    # test_perform_mil()
+    test_sigmoid_cross_entropy_loss()
