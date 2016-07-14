@@ -285,6 +285,27 @@ def test_sigmoid_cross_entropy_loss():
     return
 
 
+def test_local_global_score():
+    local_scores = np.array([[3, -2, 7, 1],
+                            [6, 8, -10, 7],
+                            [0, 4, -8, -5]])
+
+    global_score, nnorm, _ = layers.local_to_global_score_forward(local_scores, smooth_num=5,
+                                                                  global_method='maxaccum')
+
+    # compare to values from original matlab code toy_example_cost_global.m
+    assert np.allclose(global_score, 3.1111)
+    assert nnorm == 9
+
+    global_score, nnorm, _ = layers.local_to_global_score_forward(local_scores, smooth_num=5,
+                                                                  global_method='sum')
+    assert np.allclose(global_score, 1.2222, rtol=1e-4)
+
+    global_score, nnorm, _ = layers.local_to_global_score_forward(local_scores, smooth_num=5,
+                                                                  global_method='sum',
+                                                                  thrglobalscore=True)
+    assert np.allclose(global_score, 4.0, rtol=1e-4)
+
 if __name__ == "__main__":
 
     # TODO: Use the test_suite from test_utils.py
@@ -298,4 +319,5 @@ if __name__ == "__main__":
     # test_get_normalization_weights()
     #
     # test_perform_mil()
-    test_sigmoid_cross_entropy_loss()
+    # test_sigmoid_cross_entropy_loss()
+    test_local_global_score()

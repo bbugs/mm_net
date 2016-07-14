@@ -576,7 +576,7 @@ def softmax_loss(x, y):
     return loss, dx
 
 
-def svm_struct_loss(x, y):
+def svm_struct_loss(x, y, delta=1.0):
     """(np array, np array) -> float, np array
 
     author: susana
@@ -600,8 +600,8 @@ def svm_struct_loss(x, y):
     """
     N = x.shape[0]
     correct_class_scores = x[np.arange(N), y]
-    margins_rows = np.maximum(0, x - correct_class_scores[:, np.newaxis] + 1.0)
-    margins_cols = np.maximum(0, x - correct_class_scores[np.newaxis, :] + 1.0)
+    margins_rows = np.maximum(0, x - correct_class_scores[:, np.newaxis] + delta)
+    margins_cols = np.maximum(0, x - correct_class_scores[np.newaxis, :] + delta)
 
     margins_rows[np.arange(N), y] = 0
     margins_cols[np.arange(N), y] = 0
@@ -834,6 +834,54 @@ def sigmoid_cross_entropy_loss(z, y):
     dz = (y_hat - y) / num_elements
 
     return loss, dz
+
+
+def local_to_global_score_forward(local_scores, smooth_num=5, **kwargs):
+    """
+    Given an array of local_scores[i,j] that contain the similarity
+    between the ith region and the jth word for ONE given
+    image-sentence pair (correct or incorrect does not matter. All image-sentence
+    pairs have a global score),
+    average or max to get the
+     global score or region and sentence
+
+    Returns:
+         -s: a scalar that encodes the global score
+         -nnorm: a normalization scalar
+
+    """
+
+    # unpack keyword arguments
+    thrglobalscore = kwargs.pop('thrglobalscore', False)
+    global_method = kwargs.pop('global_method', 'sum')
+    img_region_index_with_max = 0
+
+    num_regions, num_words = local_scores.shape
+
+    if thrglobalscore:
+        local_scores[local_scores < 0] = 0  # threshold at zero
+
+    if global_method == 'sum':
+        s = np.sum(local_scores) # score of image-sentence
+
+    elif global_method == 'maxaccum':
+        # for each word, find the closest (in dot product) image region
+        max_sim_for_each_word = np.max(local_scores, axis=0)  # the max value of sim for each word (1, num_words)
+        img_region_index_with_max = np.argmax(local_scores, axis=0)  # recall this for backprop (1, num_words)
+
+        s = np.sum(max_sim_for_each_word)  # score of image-sentence
+    else:
+        raise ValueError("global method must be either sum or maxaccum")
+
+    nnorm = float(num_words + smooth_num)
+    s /= nnorm
+
+    return s, nnorm, img_region_index_with_max
+
+
+
+
+
 
 
 # Sus:
