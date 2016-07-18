@@ -285,26 +285,54 @@ def test_sigmoid_cross_entropy_loss():
     return
 
 
-def test_local_global_score():
+def test_global_score_one_pair():
     local_scores = np.array([[3, -2, 7, 1],
                             [6, 8, -10, 7],
                             [0, 4, -8, -5]])
 
-    global_score, nnorm, _ = layers.local_to_global_score_forward(local_scores, smooth_num=5,
-                                                                  global_method='maxaccum')
+    global_score, nnorm, _ = layers.global_score_one_pair(local_scores, smooth_num=5,
+                                                          global_method='maxaccum')
 
     # compare to values from original matlab code toy_example_cost_global.m
     assert np.allclose(global_score, 3.1111)
     assert nnorm == 9
 
-    global_score, nnorm, _ = layers.local_to_global_score_forward(local_scores, smooth_num=5,
-                                                                  global_method='sum')
+    global_score, nnorm, _ = layers.global_score_one_pair(local_scores, smooth_num=5,
+                                                          global_method='sum')
     assert np.allclose(global_score, 1.2222, rtol=1e-4)
 
-    global_score, nnorm, _ = layers.local_to_global_score_forward(local_scores, smooth_num=5,
-                                                                  global_method='sum',
-                                                                  thrglobalscore=True)
+    global_score, nnorm, _ = layers.global_score_one_pair(local_scores, smooth_num=5,
+                                                          global_method='sum',
+                                                          thrglobalscore=True)
     assert np.allclose(global_score, 4.0, rtol=1e-4)
+
+
+def test_get_global_scores_all_pairs():
+    N = 2  # number of correct image-sentence pairs in batch
+    local_scores_all = np.array([[3, -2, 7, 1, 2, 9, -9],
+                                [6, 8, -10, 7, -1, -4, -9],
+                                [0, 4, -8, -5, -3, 5, 1],
+                                [-3, 4, -5, -3, 7, 5, 6],
+                                [2, 8, 7, -6, 2, -3, 9],
+                                [-6, 10, -5, -5, 1, 1, -8]])
+    region2pair_id = np.array([0, 0, 0, 1, 1, 1])
+    word2pair_id = np.array([0, 0, 0, 0, 1, 1, 1])
+    img_sent_score_global, SGN = layers.get_global_scores_all_pairs(local_scores_all, N, region2pair_id,
+                                                                    word2pair_id, smooth_num=5,
+                                                                    thrglobalscore=True, global_method='sum')
+
+    print img_sent_score_global
+    print SGN
+
+    # [[ 4.          2.125     ]
+    #  [ 3.44444444  3.875     ]]
+    #
+    # [[ 9.  8.]
+    #  [ 9.  8.]]
+
+
+
+
 
 if __name__ == "__main__":
 
@@ -320,4 +348,5 @@ if __name__ == "__main__":
     #
     # test_perform_mil()
     # test_sigmoid_cross_entropy_loss()
-    test_local_global_score()
+    # test_local_global_score()
+    test_get_global_scores_all_pairs()

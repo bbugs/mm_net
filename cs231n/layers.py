@@ -836,7 +836,7 @@ def sigmoid_cross_entropy_loss(z, y):
     return loss, dz
 
 
-def local_to_global_score_forward(local_scores, smooth_num=5, **kwargs):
+def global_score_one_pair(sim_region_word, smooth_num, **kwargs):
     """
     Given an array of local_scores[i,j] that contain the similarity
     between the ith region and the jth word for ONE given
@@ -848,26 +848,28 @@ def local_to_global_score_forward(local_scores, smooth_num=5, **kwargs):
     Returns:
          -s: a scalar that encodes the global score
          -nnorm: a normalization scalar
+         - img_region_index_with_max for backprop
 
     """
 
+    # local_to_global_score_one_pair
     # unpack keyword arguments
     thrglobalscore = kwargs.pop('thrglobalscore', False)
     global_method = kwargs.pop('global_method', 'sum')
     img_region_index_with_max = 0
 
-    num_regions, num_words = local_scores.shape
+    num_regions, num_words = sim_region_word.shape
 
     if thrglobalscore:
-        local_scores[local_scores < 0] = 0  # threshold at zero
+        sim_region_word[sim_region_word < 0] = 0  # threshold at zero
 
     if global_method == 'sum':
-        s = np.sum(local_scores) # score of image-sentence
+        s = np.sum(sim_region_word) # score of image-sentence
 
     elif global_method == 'maxaccum':
         # for each word, find the closest (in dot product) image region
-        max_sim_for_each_word = np.max(local_scores, axis=0)  # the max value of sim for each word (1, num_words)
-        img_region_index_with_max = np.argmax(local_scores, axis=0)  # recall this for backprop (1, num_words)
+        max_sim_for_each_word = np.max(sim_region_word, axis=0)  # the max value of sim for each word (1, num_words)
+        img_region_index_with_max = np.argmax(sim_region_word, axis=0)  # recall this for backprop (1, num_words)
 
         s = np.sum(max_sim_for_each_word)  # score of image-sentence
     else:
@@ -877,6 +879,30 @@ def local_to_global_score_forward(local_scores, smooth_num=5, **kwargs):
     s /= nnorm
 
     return s, nnorm, img_region_index_with_max
+
+
+def get_global_scores_all_pairs(local_scores_all, N, region2pair_id, word2pair_id, smooth_num=5, **kwargs):
+    # all_pairs
+
+    img_sent_score_global = np.zeros((N, N))
+    SGN = np.zeros((N, N))
+    accumsis = np.zeros((N, N))
+
+    for i in range(N):
+        for j in range(N):
+            # sim_img_i_sent_j = local_scores_all[region2pair_id == i, word2pair_id == j]
+
+            # sim_img_i_sent_j = local_scores_all[np.where(region2pair_id==i)[0], np.where(word2pair_id == j)[0]]
+
+            tmp = local_scores_all[np.where(region2pair_id == i)][:, np.where(word2pair_id == j)]
+            sim_img_i_sent_j = np.squeeze(tmp)
+
+            s, nnorm, img_region_index_with_max = global_score_one_pair(sim_img_i_sent_j, smooth_num, **kwargs)
+            img_sent_score_global[i, j] = s
+            SGN[i, j] = nnorm
+
+    return img_sent_score_global, SGN
+
 
 
 
