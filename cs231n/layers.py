@@ -901,7 +901,7 @@ def _global_score_one_pair(sim_img_i_sent_j, smooth_num, **kwargs):
     return gloabal_score, cache
 
 
-def global_scores_all_pairs(sim_region_word, N, region2pair_id, word2pair_id, smooth_num=5, **kwargs):
+def global_scores_forward(sim_region_word, N, region2pair_id, word2pair_id, smooth_num=5, **kwargs):
     """
     Forward pass of global_scores gate
 
@@ -970,8 +970,8 @@ def _global_score_one_pair_backward(dout, nnorm, sim_img_i_sent_j, **kwargs):
     return d_local_scores
 
 
-def global_scores_all_pairs_backward(dout, N, sim_region_word,
-                                     region2pair_id, word2pair_id, nnorm, **kwargs):
+def global_scores_backward(dout, N, sim_region_word,
+                           region2pair_id, word2pair_id, nnorm, **kwargs):
     """
     Backward pass of global_scores gate
     Inputs:

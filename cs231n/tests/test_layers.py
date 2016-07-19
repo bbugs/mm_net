@@ -308,7 +308,7 @@ def test_global_score_one_pair():
     assert np.allclose(global_score, 4.0, rtol=1e-4)
 
 
-def test_global_scores_all_pairs():
+def test_global_scores_forward():
     N = 2  # number of correct image-sentence pairs in batch
     sim_region_word = np.array([[3, -2, 7, 1, 2, 9, -9],
                                 [6, 8, -10, 7, -1, -4, -9],
@@ -322,9 +322,9 @@ def test_global_scores_all_pairs():
     ##############################################
     # global_method = 'sum', thrglobal_score=True
     ##############################################
-    img_sent_score_global, SGN = layers.global_scores_all_pairs(sim_region_word, N, region2pair_id,
-                                                                word2pair_id, smooth_num=5,
-                                                                thrglobalscore=True, global_method='sum')
+    img_sent_score_global, SGN = layers.global_scores_forward(sim_region_word, N, region2pair_id,
+                                                              word2pair_id, smooth_num=5,
+                                                              thrglobalscore=True, global_method='sum')
 
     img_sent_score_global_true = np.array([[4., 2.125],
                                           [3.44444444, 3.875]])
@@ -341,10 +341,10 @@ def test_global_scores_all_pairs():
     ##############################################
     # global_method = 'sum', thrglobal_score=False
     ##############################################
-    img_sent_score_global, SGN = layers.global_scores_all_pairs(sim_region_word, N, region2pair_id,
-                                                                word2pair_id, smooth_num=5,
-                                                                thrglobalscore=False, global_method='sum')
-    print img_sent_score_global
+    img_sent_score_global, SGN = layers.global_scores_forward(sim_region_word, N, region2pair_id,
+                                                              word2pair_id, smooth_num=5,
+                                                              thrglobalscore=False, global_method='sum')
+
     # from matlab code:
     img_sent_score_global_true = np.array([[1.22222222, -1.125],
                                            [-0.22222222, 2.5]])
@@ -354,7 +354,7 @@ def test_global_scores_all_pairs():
     return
 
 
-def test_global_scores_all_pairs_backward():
+def test_global_scores_backward():
     N = 2  # number of correct image-sentence pairs in batch
     # local scores:how similar each region is to each word
     sim_region_word = np.array([[3, -2, 7, 1, 2, 9, -9],
@@ -369,18 +369,18 @@ def test_global_scores_all_pairs_backward():
     ##############################################
     # global_method = 'sum', thrglobal_score=False
     ##############################################
-    img_sent_score_global, SGN = layers.global_scores_all_pairs(sim_region_word, N,
-                                                                region2pair_id, word2pair_id,
-                                                                smooth_num=5, thrglobalscore=False,
-                                                                global_method='sum')
+    img_sent_score_global, SGN = layers.global_scores_forward(sim_region_word, N,
+                                                              region2pair_id, word2pair_id,
+                                                              smooth_num=5, thrglobalscore=False,
+                                                              global_method='sum')
 
     y = np.arange(N)  # the diagonal elements are correct
     loss, d_global_scores = layers.svm_struct_loss(img_sent_score_global, y, delta=40.0, avg=False)
 
     # lotopg in matlab code:
-    d_local_scores = layers.global_scores_all_pairs_backward(d_global_scores, N, sim_region_word,
-                                                             region2pair_id, word2pair_id, SGN,
-                                                             global_method='sum', thrglobalscore=False)
+    d_local_scores = layers.global_scores_backward(d_global_scores, N, sim_region_word,
+                                                   region2pair_id, word2pair_id, SGN,
+                                                   global_method='sum', thrglobalscore=False)
 
     # from matlab code (make sure all conditions are the same), this is the gradient wrt local scores
     d_local_scores_true = np.array([[-0.2222, -0.2222, -0.2222, -0.2222, 0.2500, 0.2500, 0.2500],
@@ -401,16 +401,16 @@ def test_global_scores_all_pairs_backward():
     # global_method = 'sum', thrglobal_score=True
     ##############################################
 
-    img_sent_score_global, SGN = layers.global_scores_all_pairs(sim_region_word, N,
-                                                                region2pair_id, word2pair_id,
-                                                                smooth_num=5, thrglobalscore=True,
-                                                                global_method='sum')
+    img_sent_score_global, SGN = layers.global_scores_forward(sim_region_word, N,
+                                                              region2pair_id, word2pair_id,
+                                                              smooth_num=5, thrglobalscore=True,
+                                                              global_method='sum')
 
     loss, d_global_scores = layers.svm_struct_loss(img_sent_score_global, y, delta=40.0, avg=False)
 
-    d_local_scores = layers.global_scores_all_pairs_backward(d_global_scores, N, sim_region_word,
-                                                             region2pair_id, word2pair_id, SGN,
-                                                             global_method='sum', thrglobalscore=True)
+    d_local_scores = layers.global_scores_backward(d_global_scores, N, sim_region_word,
+                                                   region2pair_id, word2pair_id, SGN,
+                                                   global_method='sum', thrglobalscore=True)
     d_local_scores_true = np.array([[-0.2222, 0, -0.2222, -0.2222, 0.2500, 0.2500, 0],
                                     [-0.2222, -0.2222, 0, -0.2222, 0, 0, 0],
                                     [-0.2222, -0.2222, 0, 0, 0, 0.2500, 0.2500],
@@ -443,5 +443,5 @@ if __name__ == "__main__":
     # test_perform_mil()
     # test_sigmoid_cross_entropy_loss()
     # test_global_score_one_pair()
-    # test_global_scores_all_pairs()
-    test_global_scores_all_pairs_backward()
+    test_global_scores_forward()
+    test_global_scores_backward()
