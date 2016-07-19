@@ -290,21 +290,23 @@ def test_global_score_one_pair():
                             [6, 8, -10, 7],
                             [0, 4, -8, -5]])
 
-    global_score, nnorm = layers._global_score_one_pair(local_scores, smooth_num=5,
-                                                           global_method='maxaccum')
+    global_score, info = layers._global_score_one_pair_forward(local_scores, smooth_num=5,
+                                                               global_method='maxaccum',
+                                                               thrglobalscore=False)
 
     # compare to values from original matlab code toy_example_cost_global.m
     assert np.allclose(global_score, 3.1111)
-    print nnorm
-    assert nnorm == 9
+    print info['nnorm']
+    assert info['nnorm'] == 9
 
-    global_score, nnorm = layers._global_score_one_pair(local_scores, smooth_num=5,
-                                                           global_method='sum')
+    global_score, info = layers._global_score_one_pair_forward(local_scores, smooth_num=5,
+                                                               global_method='sum',
+                                                               thrglobalscore=False)
     assert np.allclose(global_score, 1.2222, rtol=1e-4)
 
-    global_score, nnorm = layers._global_score_one_pair(local_scores, smooth_num=5,
-                                                           global_method='sum',
-                                                           thrglobalscore=True)
+    global_score, info = layers._global_score_one_pair_forward(local_scores, smooth_num=5,
+                                                               global_method='sum',
+                                                               thrglobalscore=True)
     assert np.allclose(global_score, 4.0, rtol=1e-4)
 
 
@@ -349,6 +351,18 @@ def test_global_scores_forward():
     img_sent_score_global_true = np.array([[1.22222222, -1.125],
                                            [-0.22222222, 2.5]])
     assert np.allclose(img_sent_score_global, img_sent_score_global_true, rtol=1e-05, atol=1e-08), \
+        "global_scores_all_pairs did NOT pass global score test"
+
+    ##############################################
+    # global_method = 'maxaccum', thrglobal_score=False
+    ##############################################
+    img_sent_score_global, SGN = layers.global_scores_forward(sim_region_word, N, region2pair_id,
+                                                              word2pair_id, smooth_num=5,
+                                                              thrglobalscore=False, global_method='maxaccum')
+    # from matlab code susy_code_bare_bones/toy_example_cost_global_maxaccum.m:
+    img_sent_score_global_true = np.array([[3.1111, 1.5000],
+                                           [1.7778, 2.6250]])
+    assert np.allclose(img_sent_score_global, img_sent_score_global_true, rtol=1e-04, atol=1e-04), \
         "global_scores_all_pairs did NOT pass global score test"
 
     return
@@ -422,6 +436,37 @@ def test_global_scores_backward():
         "global_scores_all_pairs did NOT pass gradient test (compared to matlab code)"
     assert np.allclose(loss, 155.3889), "loss did not pass compared to matlab code"
 
+    ##############################################
+    # global_method = 'maxaccum', thrglobalscore=False
+    ##############################################
+
+    img_sent_score_global, SGN = layers.global_scores_forward(sim_region_word, N,
+                                                              region2pair_id, word2pair_id,
+                                                              smooth_num=5, thrglobalscore=False,
+                                                              global_method='maxaccum')
+
+    loss, d_global_scores = layers.svm_struct_loss(img_sent_score_global, y, delta=40.0, avg=False)
+    #
+    assert np.allclose(loss, 155.0833)  # against matlab code toy_example_cost_global_maxaccum.m
+    assert np.allclose(img_sent_score_global, np.array([[3.1111, 1.5000], [1.7778, 2.6250]]), rtol=1e-04, atol=1e-04)  # SG in matlab
+    assert np.allclose(d_global_scores, np.array([[-2., 2.], [2., -2.]]), rtol=1e-04, atol=1e-04)  # dsg in matlab
+
+    d_local_scores = layers.global_scores_backward(d_global_scores, N, sim_region_word,
+                                                   region2pair_id, word2pair_id, SGN,
+                                                   global_method='maxaccum', thrglobalscore=False)
+
+    # ltopg from matlab toy_example_cost_global_maxaccum.m:
+    d_local_scores_true = np.array([[0, 0, -0.2222, 0, 0.2500, 0.2500, 0],
+                                    [-0.2222, -0.2222, 0, -0.2222, 0, 0, 0],
+                                    [0, 0, 0, 0, 0, 0, 0.2500],
+                                    [0, 0, 0, 0.2222, -0.2500, -0.2500, 0],
+                                    [0.2222, 0, 0.2222, 0, 0, 0, -0.2500],
+                                    [0, 0.2222, 0, 0, 0, 0, 0]])
+    #
+    assert np.allclose(d_local_scores, d_local_scores_true, rtol=1e-04, atol=1e-04), \
+        "global_scores_all_pairs did NOT pass gradient test (compared to matlab code)"
+    assert np.allclose(loss, 155.3889), "loss did not pass compared to matlab code"
+
     return
 
 
@@ -443,5 +488,5 @@ if __name__ == "__main__":
     # test_perform_mil()
     # test_sigmoid_cross_entropy_loss()
     # test_global_score_one_pair()
-    test_global_scores_forward()
+    # test_global_scores_forward()
     test_global_scores_backward()

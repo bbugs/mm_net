@@ -838,7 +838,7 @@ def sigmoid_cross_entropy_loss(z, y):
     return loss, dz
 
 
-def _global_score_one_pair(sim_img_i_sent_j, smooth_num, **kwargs):
+def _global_score_one_pair_forward(sim_img_i_sent_j, smooth_num, **kwargs):
     """
     Forward pass of global_score gate for ONE image-sentence pair
     All image-sentence pairs have a global score,
@@ -931,7 +931,7 @@ def global_scores_forward(sim_region_word, N, region2pair_id, word2pair_id, smoo
             tmp = sim_region_word[np.where(region2pair_id == i)][:, np.where(word2pair_id == j)]
             sim_img_i_sent_j = np.squeeze(tmp)
 
-            s, cache = _global_score_one_pair(sim_img_i_sent_j, smooth_num, **kwargs)
+            s, cache = _global_score_one_pair_forward(sim_img_i_sent_j, smooth_num, **kwargs)
             img_sent_score_global[i, j] = s
             SGN[i, j] = cache['nnorm']
 
