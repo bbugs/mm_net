@@ -962,6 +962,7 @@ def _global_score_one_pair_backward(dout, nnorm, sim_img_i_sent_j, **kwargs):
         d_local_scores = np.ones((n_regions, n_words)) * dout / nnorm
         if thrglobalscore:
             d_local_scores[sim_img_i_sent_j < 0] = 0
+    # TODO: implement backward pass for maxaccum
     # elif global_method == 'maxaccum':
     #     gradroute = dout / nnorm
     else:
