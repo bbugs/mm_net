@@ -290,26 +290,26 @@ def test_global_score_one_pair():
                             [6, 8, -10, 7],
                             [0, 4, -8, -5]])
 
-    global_score, nnorm, _ = layers.global_score_one_pair(local_scores, smooth_num=5,
-                                                          global_method='maxaccum')
+    global_score, nnorm, _ = layers._global_score_one_pair(local_scores, smooth_num=5,
+                                                           global_method='maxaccum')
 
     # compare to values from original matlab code toy_example_cost_global.m
     assert np.allclose(global_score, 3.1111)
     assert nnorm == 9
 
-    global_score, nnorm, _ = layers.global_score_one_pair(local_scores, smooth_num=5,
-                                                          global_method='sum')
+    global_score, nnorm, _ = layers._global_score_one_pair(local_scores, smooth_num=5,
+                                                           global_method='sum')
     assert np.allclose(global_score, 1.2222, rtol=1e-4)
 
-    global_score, nnorm, _ = layers.global_score_one_pair(local_scores, smooth_num=5,
-                                                          global_method='sum',
-                                                          thrglobalscore=True)
+    global_score, nnorm, _ = layers._global_score_one_pair(local_scores, smooth_num=5,
+                                                           global_method='sum',
+                                                           thrglobalscore=True)
     assert np.allclose(global_score, 4.0, rtol=1e-4)
 
 
-def test_get_global_scores_all_pairs():
+def test_global_scores_all_pairs():
     N = 2  # number of correct image-sentence pairs in batch
-    local_scores_all = np.array([[3, -2, 7, 1, 2, 9, -9],
+    sim_region_word = np.array([[3, -2, 7, 1, 2, 9, -9],
                                 [6, 8, -10, 7, -1, -4, -9],
                                 [0, 4, -8, -5, -3, 5, 1],
                                 [-3, 4, -5, -3, 7, 5, 6],
@@ -317,18 +317,69 @@ def test_get_global_scores_all_pairs():
                                 [-6, 10, -5, -5, 1, 1, -8]])
     region2pair_id = np.array([0, 0, 0, 1, 1, 1])
     word2pair_id = np.array([0, 0, 0, 0, 1, 1, 1])
-    img_sent_score_global, SGN = layers.get_global_scores_all_pairs(local_scores_all, N, region2pair_id,
-                                                                    word2pair_id, smooth_num=5,
-                                                                    thrglobalscore=True, global_method='sum')
+    img_sent_score_global, SGN = layers.global_scores_all_pairs(sim_region_word, N, region2pair_id,
+                                                                word2pair_id, smooth_num=5,
+                                                                thrglobalscore=True, global_method='sum')
 
     print img_sent_score_global
     print SGN
 
-    # [[ 4.          2.125     ]
-    #  [ 3.44444444  3.875     ]]
+    img_sent_score_global_true = np.array([[4., 2.125],
+                                          [3.44444444, 3.875]])
     #
-    # [[ 9.  8.]
-    #  [ 9.  8.]]
+    SGN_true = np.array([[9., 8.],
+                        [9., 8.]])
+
+    assert np.allclose(img_sent_score_global, img_sent_score_global_true, rtol=1e-05, atol=1e-08), \
+        "global_scores_all_pairs did NOT pass global score test"
+
+    assert np.allclose(SGN, SGN_true, rtol=1e-05, atol=1e-08), \
+        "global_scores_all_pairs did NOT pass SGN normalization constants test"
+
+    return
+
+
+def test_global_scores_all_pairs_backward():
+    N = 2  # number of correct image-sentence pairs in batch
+    # local scores:how similar each region is to each word
+    sim_region_word = np.array([[3, -2, 7, 1, 2, 9, -9],
+                                [6, 8, -10, 7, -1, -4, -9],
+                                [0, 4, -8, -5, -3, 5, 1],
+                                [-3, 4, -5, -3, 7, 5, 6],
+                                [2, 8, 7, -6, 2, -3, 9],
+                                [-6, 10, -5, -5, 1, 1, -8]])
+    region2pair_id = np.array([0, 0, 0, 1, 1, 1])
+    word2pair_id = np.array([0, 0, 0, 0, 1, 1, 1])
+
+    img_sent_score_global, SGN = layers.global_scores_all_pairs(sim_region_word, N,
+                                                                region2pair_id, word2pair_id,
+                                                                smooth_num=5, thrglobalscore=False,
+                                                                global_method='sum')
+
+    y = np.arange(N)  # the diagonal elements are correct
+    loss, d_global_scores = layers.svm_struct_loss(img_sent_score_global, y, delta=40.0, avg=False)
+
+    # lotopg in matlab code:
+    d_local_scores = layers.global_scores_all_pairs_backward(d_global_scores, N, sim_region_word,
+                                                             region2pair_id, word2pair_id, SGN,
+                                                             global_method='sum', thrglobalscore=False)
+
+    # from matlab code (make sure all conditions are the same), this is the gradient wrt local scores
+    d_local_scores_true = np.array([[-0.2222, -0.2222, -0.2222, -0.2222, 0.2500, 0.2500, 0.2500],
+                                    [-0.2222, -0.2222, -0.2222, -0.2222, 0.2500, 0.2500, 0.2500],
+                                    [-0.2222, -0.2222, -0.2222, -0.2222, 0.2500, 0.2500, 0.2500],
+                                    [0.2222, 0.2222, 0.2222, 0.2222, -0.2500, -0.2500, -0.2500],
+                                    [0.2222, 0.2222, 0.2222, 0.2222, -0.2500, -0.2500, -0.2500],
+                                    [0.2222, 0.2222, 0.2222, 0.2222, -0.2500, -0.2500, -0.2500]]
+                                   )
+    assert np.allclose(d_local_scores, d_local_scores_true, rtol=1e-04, atol=1e-04), \
+        "global_scores_all_pairs did NOT pass gradient test (compared to matlab code)"
+
+    true_loss = 149.8611  # from matlab code toy_example_cost_global.m
+    assert np.allclose(loss, true_loss, rtol=1e-04, atol=1e-04), \
+        "global_scores_all_pairs did NOT pass loss test (compared to matlab code)"
+
+    return
 
 
 
@@ -349,4 +400,5 @@ if __name__ == "__main__":
     # test_perform_mil()
     # test_sigmoid_cross_entropy_loss()
     # test_local_global_score()
-    test_get_global_scores_all_pairs()
+    # test_global_scores_all_pairs()
+    test_global_scores_all_pairs_backward()

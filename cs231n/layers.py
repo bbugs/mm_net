@@ -576,8 +576,8 @@ def softmax_loss(x, y):
     return loss, dx
 
 
-def svm_struct_loss(x, y, delta=1.0):
-    """(np array, np array) -> float, np array
+def svm_struct_loss(x, y, delta=1.0, avg=True):
+    """(np array, np array, float, bool) -> float, np array
 
     author: susana
 
@@ -609,7 +609,7 @@ def svm_struct_loss(x, y, delta=1.0):
     margins = margins_rows + margins_cols
     margins[np.arange(N), y] = 0
 
-    loss = np.sum(margins) / N
+    loss = np.sum(margins)
 
     num_pos = np.sum(margins > 0, axis=1)  # number of positives for each row
     num_pos += np.sum(margins > 0, axis=0)  # number of positives for each column
@@ -618,7 +618,9 @@ def svm_struct_loss(x, y, delta=1.0):
     dx[margins_cols > 0] += 1
 
     dx[np.arange(N), y] -= num_pos  # elements of the diagonal of dx
-    dx /= N
+    if avg:  # want the average loss and dx?
+        loss /= float(N)
+        dx /= float(N)
 
     return loss, dx
 
@@ -836,7 +838,7 @@ def sigmoid_cross_entropy_loss(z, y):
     return loss, dz
 
 
-def global_score_one_pair(sim_region_word, smooth_num, **kwargs):
+def _global_score_one_pair(sim_img_i_sent_j, smooth_num, **kwargs):
     """
     Given an array of local_scores[i,j] that contain the similarity
     between the ith region and the jth word for ONE given
@@ -858,18 +860,18 @@ def global_score_one_pair(sim_region_word, smooth_num, **kwargs):
     global_method = kwargs.pop('global_method', 'sum')
     img_region_index_with_max = 0
 
-    num_regions, num_words = sim_region_word.shape
+    num_regions, num_words = sim_img_i_sent_j.shape
 
     if thrglobalscore:
-        sim_region_word[sim_region_word < 0] = 0  # threshold at zero
+        sim_img_i_sent_j[sim_img_i_sent_j < 0] = 0  # threshold at zero
 
     if global_method == 'sum':
-        s = np.sum(sim_region_word) # score of image-sentence
+        s = np.sum(sim_img_i_sent_j) # score of image-sentence
 
     elif global_method == 'maxaccum':
         # for each word, find the closest (in dot product) image region
-        max_sim_for_each_word = np.max(sim_region_word, axis=0)  # the max value of sim for each word (1, num_words)
-        img_region_index_with_max = np.argmax(sim_region_word, axis=0)  # recall this for backprop (1, num_words)
+        max_sim_for_each_word = np.max(sim_img_i_sent_j, axis=0)  # the max value of sim for each word (1, num_words)
+        img_region_index_with_max = np.argmax(sim_img_i_sent_j, axis=0)  # recall this for backprop (1, num_words)
 
         s = np.sum(max_sim_for_each_word)  # score of image-sentence
     else:
@@ -878,10 +880,16 @@ def global_score_one_pair(sim_region_word, smooth_num, **kwargs):
     nnorm = float(num_words + smooth_num)
     s /= nnorm
 
-    return s, nnorm, img_region_index_with_max
+    cache = {}
+    cache['nnorm'] = nnorm
+    cache['img_region_index_with_max'] = img_region_index_with_max
+    cache['n_regions_n_words'] = sim_img_i_sent_j.shape
+    cache['sim_img_i_sent_j'] = sim_img_i_sent_j
+
+    return s, cache
 
 
-def get_global_scores_all_pairs(local_scores_all, N, region2pair_id, word2pair_id, smooth_num=5, **kwargs):
+def global_scores_all_pairs(sim_region_word, N, region2pair_id, word2pair_id, smooth_num=5, **kwargs):
     # all_pairs
 
     img_sent_score_global = np.zeros((N, N))
@@ -894,19 +902,71 @@ def get_global_scores_all_pairs(local_scores_all, N, region2pair_id, word2pair_i
 
             # sim_img_i_sent_j = local_scores_all[np.where(region2pair_id==i)[0], np.where(word2pair_id == j)[0]]
 
-            tmp = local_scores_all[np.where(region2pair_id == i)][:, np.where(word2pair_id == j)]
+            tmp = sim_region_word[np.where(region2pair_id == i)][:, np.where(word2pair_id == j)]
             sim_img_i_sent_j = np.squeeze(tmp)
 
-            s, nnorm, img_region_index_with_max = global_score_one_pair(sim_img_i_sent_j, smooth_num, **kwargs)
+            s, cache = _global_score_one_pair(sim_img_i_sent_j, smooth_num, **kwargs)
             img_sent_score_global[i, j] = s
-            SGN[i, j] = nnorm
+            SGN[i, j] = cache['nnorm']
 
     return img_sent_score_global, SGN
 
 
+def _global_score_one_pair_backward(dout, nnorm, sim_img_i_sent_j, **kwargs):
+
+    thrglobalscore = kwargs.pop('thrglobalscore', False)
+    global_method = kwargs.pop('global_method', 'sum')
+
+    n_regions, n_words = sim_img_i_sent_j.shape
+
+    if global_method == 'sum':
+        dd = np.ones((n_regions, n_words)) * dout / nnorm
+        if thrglobalscore:
+            dd[sim_img_i_sent_j] = 0
+    # elif global_method == 'maxaccum':
+    #     gradroute = dout / nnorm
+    else:
+        raise ValueError("global method must be sum")
+
+    return dd
 
 
+def global_scores_all_pairs_backward(dout, N, sim_region_word,
+                                     region2pair_id, word2pair_id, nnorm, **kwargs):
+    """ ()
 
+    Inputs:
+    - dout:             upstream gradient of size (N,N)
+    - sim_region_word:  np array of size (n_regions_in_batch, n_words_in_batch)
+    - region2pair_id:   np array of size (1, n_regions). The index is the region id
+                          and the value is the pair id that the region belongs to.
+
+    Returns:
+    - 
+    """
+
+
+    # unpack keyword arguments
+    global_method = kwargs.pop('global_method')
+
+    ltopg = np.zeros(sim_region_word.shape)
+
+    for i in range(N):
+        for j in range(N):
+            if global_method == 'sum':
+                # slice out the local scores that correspond to all regions of image i and all words of sentence j
+                tmp = sim_region_word[np.where(region2pair_id == i)][:, np.where(word2pair_id == j)]
+                sim_img_i_sent_j = np.squeeze(tmp)
+
+                # indicator array of region-word pairs corresponding to the ith image and the jth sentence
+                MEQ = np.outer(region2pair_id == i, word2pair_id == j)
+
+                # get gradient with respect to the local scores of image i and sentence j
+                dd = _global_score_one_pair_backward(dout[i, j], nnorm[i, j], sim_img_i_sent_j, **kwargs)
+                ltopg[MEQ] = dd.ravel()
+            else:
+                raise ValueError("only sum is supported")
+    return ltopg
 
 
 
