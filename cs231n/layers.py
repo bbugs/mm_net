@@ -913,6 +913,19 @@ def global_scores_all_pairs(sim_region_word, N, region2pair_id, word2pair_id, sm
 
 
 def _global_score_one_pair_backward(dout, nnorm, sim_img_i_sent_j, **kwargs):
+    """
+    Backward pass of global_scores gate
+    Inputs:
+    - dout:             upstream gradient of size (1,1), i.e., a scalar
+    - sim_img_i_sent_j: np array of size (n_regions_in_img_i, n_words_in_sentence_j) containing local scores
+    - nnorm:            scalar containing normalizing constants previously
+                        computed in the forward pass.
+    - kwargs:           global_method is either 'sum' or 'maxaccum'
+
+
+    Returns:
+    - d_local_scores:   gradient wrt local scores (sim_region_word), same size as sim_region_word.
+    """
 
     thrglobalscore = kwargs.pop('thrglobalscore', False)
     global_method = kwargs.pop('global_method', 'sum')
@@ -933,23 +946,29 @@ def _global_score_one_pair_backward(dout, nnorm, sim_img_i_sent_j, **kwargs):
 
 def global_scores_all_pairs_backward(dout, N, sim_region_word,
                                      region2pair_id, word2pair_id, nnorm, **kwargs):
-    """ ()
-
+    """
+    Backward pass of global_scores gate
     Inputs:
     - dout:             upstream gradient of size (N,N)
-    - sim_region_word:  np array of size (n_regions_in_batch, n_words_in_batch)
-    - region2pair_id:   np array of size (1, n_regions). The index is the region id
-                          and the value is the pair id that the region belongs to.
+    - sim_region_word:  np array of size (n_regions_in_batch, n_words_in_batch) containing local scores
+    - region2pair_id:   np array of size (1, n_regions_n_batch). The index is the region id
+                            and the value is the pair id that the region belongs to.
+    - word2pair_id:     np array of size (1, n_words_in_batch). The index is the region id
+                            and the value is the pair id that the word belongs to.
+    - nnorm:            np array of size (N,N) containing normalizing constants previously
+                            computed in the forward pass.
+    - kwargs:           global_method is either 'sum' or 'maxaccum' (indicates how to compute
+                            the global score, either with a sum or with a max)
+                        thrglobalscore is either True or False (indicates whether
+                            to threshold global scores at zero)
 
     Returns:
-    - 
+    - d_local_scores:   gradient wrt local scores (sim_region_word), same size as sim_region_word.
     """
-
-
     # unpack keyword arguments
     global_method = kwargs.pop('global_method')
 
-    ltopg = np.zeros(sim_region_word.shape)
+    d_local_scores = np.zeros(sim_region_word.shape)
 
     for i in range(N):
         for j in range(N):
@@ -963,10 +982,10 @@ def global_scores_all_pairs_backward(dout, N, sim_region_word,
 
                 # get gradient with respect to the local scores of image i and sentence j
                 dd = _global_score_one_pair_backward(dout[i, j], nnorm[i, j], sim_img_i_sent_j, **kwargs)
-                ltopg[MEQ] = dd.ravel()
+                d_local_scores[MEQ] = dd.ravel()
             else:
                 raise ValueError("only sum is supported")
-    return ltopg
+    return d_local_scores
 
 
 
