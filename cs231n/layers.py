@@ -840,24 +840,36 @@ def sigmoid_cross_entropy_loss(z, y):
 
 def _global_score_one_pair(sim_img_i_sent_j, smooth_num, **kwargs):
     """
-    Given an array of local_scores[i,j] that contain the similarity
-    between the ith region and the jth word for ONE given
-    image-sentence pair (correct or incorrect does not matter. All image-sentence
-    pairs have a global score),
-    average or max to get the
-     global score or region and sentence
+    Forward pass of global_score gate for ONE image-sentence pair
+    All image-sentence pairs have a global score,
+    average or max to get the global score or region and sentence
+
+    Inputs:
+
+    - sim_img_i_sent_j: np array of size (n_regions_in_img_i, n_words_in_sentence_j) containing local scores
+                        sim_img_i_sent_j[i,j] contains the similarity
+                        between the ith region and the jth word for ONE given
+                        image-sentence pair (correct or incorrect does not matter.
+
+    - smooth_num:       scalar smoothing constant, i.e., 'n' in Eq. 6 of NIPS paper.
+
+    - kwargs:           global_method is either 'sum' or 'maxaccum' (indicates how to compute
+                            the global score, either with a sum or with a max)
+                        thrglobalscore is either True or False (indicates whether
+                            to threshold global scores at zero)
+
 
     Returns:
-         -s: a scalar that encodes the global score
+         -s: a scalar with the global score of the image-sentence pair
          -nnorm: a normalization scalar
-         - img_region_index_with_max for backprop
+         - img_region_index_with_max for backprop in case of maxaccum
 
     """
 
     # local_to_global_score_one_pair
     # unpack keyword arguments
-    thrglobalscore = kwargs.pop('thrglobalscore', False)
-    global_method = kwargs.pop('global_method', 'sum')
+    thrglobalscore = kwargs.pop('thrglobalscore')
+    global_method = kwargs.pop('global_method')
     img_region_index_with_max = 0
 
     num_regions, num_words = sim_img_i_sent_j.shape
@@ -866,31 +878,45 @@ def _global_score_one_pair(sim_img_i_sent_j, smooth_num, **kwargs):
         sim_img_i_sent_j[sim_img_i_sent_j < 0] = 0  # threshold at zero
 
     if global_method == 'sum':
-        s = np.sum(sim_img_i_sent_j) # score of image-sentence
+        gloabal_score = np.sum(sim_img_i_sent_j) # score of image-sentence
 
     elif global_method == 'maxaccum':
         # for each word, find the closest (in dot product) image region
         max_sim_for_each_word = np.max(sim_img_i_sent_j, axis=0)  # the max value of sim for each word (1, num_words)
         img_region_index_with_max = np.argmax(sim_img_i_sent_j, axis=0)  # recall this for backprop (1, num_words)
 
-        s = np.sum(max_sim_for_each_word)  # score of image-sentence
+        gloabal_score = np.sum(max_sim_for_each_word)  # score of image-sentence
     else:
         raise ValueError("global method must be either sum or maxaccum")
 
     nnorm = float(num_words + smooth_num)
-    s /= nnorm
+    gloabal_score /= nnorm
 
     cache = {}
     cache['nnorm'] = nnorm
     cache['img_region_index_with_max'] = img_region_index_with_max
     cache['n_regions_n_words'] = sim_img_i_sent_j.shape
-    cache['sim_img_i_sent_j'] = sim_img_i_sent_j
+    # cache['sim_img_i_sent_j'] = sim_img_i_sent_j
 
-    return s, cache
+    return gloabal_score, cache
 
 
 def global_scores_all_pairs(sim_region_word, N, region2pair_id, word2pair_id, smooth_num=5, **kwargs):
-    # all_pairs
+    """
+    Forward pass of global_scores gate
+
+    Inputs:
+    - sim_region_word:  np array of size (n_regions_in_batch, n_words_in_batch) containing local scores
+    - N:                number of correct image-sentence pairs in batch
+    - region2pair_id:   np array of size (1, n_regions_n_batch). The index is the region id
+                            and the value is the pair id that the region belongs to.
+    - word2pair_id:     np array of size (1, n_words_in_batch). The index is the region id
+                            and the value is the pair id that the word belongs to.
+
+    Returns:
+    - img_sent_global_score:  np array of size (N,N) containing the global
+                              scores for each image-sentence pair in batch (correct and incorrect ones)
+    """
 
     img_sent_score_global = np.zeros((N, N))
     SGN = np.zeros((N, N))
@@ -914,7 +940,8 @@ def global_scores_all_pairs(sim_region_word, N, region2pair_id, word2pair_id, sm
 
 def _global_score_one_pair_backward(dout, nnorm, sim_img_i_sent_j, **kwargs):
     """
-    Backward pass of global_scores gate
+    Backward pass of global_scores gate for one pair
+
     Inputs:
     - dout:             upstream gradient of size (1,1), i.e., a scalar
     - sim_img_i_sent_j: np array of size (n_regions_in_img_i, n_words_in_sentence_j) containing local scores
@@ -922,9 +949,8 @@ def _global_score_one_pair_backward(dout, nnorm, sim_img_i_sent_j, **kwargs):
                         computed in the forward pass.
     - kwargs:           global_method is either 'sum' or 'maxaccum'
 
-
     Returns:
-    - d_local_scores:   gradient wrt local scores (sim_region_word), same size as sim_region_word.
+    - d_local_scores:   gradient wrt local scores (sim_img_i_sent_j), same size as sim_img_i_sent_j.
     """
 
     thrglobalscore = kwargs.pop('thrglobalscore', False)
@@ -933,15 +959,15 @@ def _global_score_one_pair_backward(dout, nnorm, sim_img_i_sent_j, **kwargs):
     n_regions, n_words = sim_img_i_sent_j.shape
 
     if global_method == 'sum':
-        dd = np.ones((n_regions, n_words)) * dout / nnorm
+        d_local_scores = np.ones((n_regions, n_words)) * dout / nnorm
         if thrglobalscore:
-            dd[sim_img_i_sent_j] = 0
+            d_local_scores[sim_img_i_sent_j < 0] = 0
     # elif global_method == 'maxaccum':
     #     gradroute = dout / nnorm
     else:
         raise ValueError("global method must be sum")
 
-    return dd
+    return d_local_scores
 
 
 def global_scores_all_pairs_backward(dout, N, sim_region_word,
