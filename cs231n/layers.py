@@ -868,9 +868,9 @@ def _global_score_one_pair_forward(sim_img_i_sent_j, smooth_num, **kwargs):
 
     # local_to_global_score_one_pair
     # unpack keyword arguments
-    thrglobalscore = kwargs.pop('thrglobalscore')
-    global_method = kwargs.pop('global_method')
-    img_region_index_with_max = 0
+    thrglobalscore = kwargs['thrglobalscore']
+    global_method = kwargs['global_method']
+    img_region_index_with_max = np.array([])
 
     num_regions, num_words = sim_img_i_sent_j.shape
 
@@ -920,7 +920,7 @@ def global_scores_forward(sim_region_word, N, region2pair_id, word2pair_id, smoo
 
     img_sent_score_global = np.zeros((N, N))
     SGN = np.zeros((N, N))
-    accumsis = np.zeros((N, N))
+    img_region_with_max = {}
 
     for i in range(N):
         for j in range(N):
@@ -932,13 +932,17 @@ def global_scores_forward(sim_region_word, N, region2pair_id, word2pair_id, smoo
             sim_img_i_sent_j = np.squeeze(tmp)
 
             s, info = _global_score_one_pair_forward(sim_img_i_sent_j, smooth_num, **kwargs)
+
+            if kwargs['global_method'] == 'maxaccum':
+                img_region_with_max[(i, j)] = info['img_region_index_with_max']
+
             img_sent_score_global[i, j] = s
             SGN[i, j] = info['nnorm']
 
-    return img_sent_score_global, SGN
+    return img_sent_score_global, SGN, img_region_with_max
 
 
-def _global_score_one_pair_backward(dout, nnorm, sim_img_i_sent_j, **kwargs):
+def _global_score_one_pair_backward(dout, nnorm, sim_img_i_sent_j, img_region_index_with_max, **kwargs):
     """
     Backward pass of global_scores gate for one pair
 
@@ -953,8 +957,8 @@ def _global_score_one_pair_backward(dout, nnorm, sim_img_i_sent_j, **kwargs):
     - d_local_scores:   gradient wrt local scores (sim_img_i_sent_j), same size as sim_img_i_sent_j.
     """
 
-    thrglobalscore = kwargs.pop('thrglobalscore', False)
-    global_method = kwargs.pop('global_method', 'sum')
+    thrglobalscore = kwargs['thrglobalscore']
+    global_method = kwargs['global_method']
 
     n_regions, n_words = sim_img_i_sent_j.shape
 
@@ -962,9 +966,10 @@ def _global_score_one_pair_backward(dout, nnorm, sim_img_i_sent_j, **kwargs):
         d_local_scores = np.ones((n_regions, n_words)) * dout / nnorm
         if thrglobalscore:
             d_local_scores[sim_img_i_sent_j < 0] = 0
-    # TODO: implement backward pass for maxaccum
-    # elif global_method == 'maxaccum':
-    #     gradroute = dout / nnorm
+    elif global_method == 'maxaccum':
+        d_local_scores = np.zeros((n_regions, n_words))
+        d_local_scores[img_region_index_with_max, np.arange(n_words)] = dout / nnorm
+
     else:
         raise ValueError("global method must be sum")
 
@@ -972,7 +977,7 @@ def _global_score_one_pair_backward(dout, nnorm, sim_img_i_sent_j, **kwargs):
 
 
 def global_scores_backward(dout, N, sim_region_word,
-                           region2pair_id, word2pair_id, nnorm, **kwargs):
+                           region2pair_id, word2pair_id, nnorm, img_region_index_with_max, **kwargs):
     """
     Backward pass of global_scores gate
     Inputs:
@@ -993,25 +998,31 @@ def global_scores_backward(dout, N, sim_region_word,
     - d_local_scores:   gradient wrt local scores (sim_region_word), same size as sim_region_word.
     """
     # unpack keyword arguments
-    global_method = kwargs.pop('global_method')
+    global_method = kwargs['global_method']
 
     d_local_scores = np.zeros(sim_region_word.shape)
 
     for i in range(N):
         for j in range(N):
+            # slice out the local scores that correspond to all regions of image i and all words of sentence j
+            tmp = sim_region_word[np.where(region2pair_id == i)][:, np.where(word2pair_id == j)]
+            sim_img_i_sent_j = np.squeeze(tmp)
+
+            # indicator array of region-word pairs corresponding to the ith image and the jth sentence
+            MEQ = np.outer(region2pair_id == i, word2pair_id == j)
+
             if global_method == 'sum':
-                # slice out the local scores that correspond to all regions of image i and all words of sentence j
-                tmp = sim_region_word[np.where(region2pair_id == i)][:, np.where(word2pair_id == j)]
-                sim_img_i_sent_j = np.squeeze(tmp)
-
-                # indicator array of region-word pairs corresponding to the ith image and the jth sentence
-                MEQ = np.outer(region2pair_id == i, word2pair_id == j)
-
                 # get gradient with respect to the local scores of image i and sentence j
-                dd = _global_score_one_pair_backward(dout[i, j], nnorm[i, j], sim_img_i_sent_j, **kwargs)
-                d_local_scores[MEQ] = dd.ravel()
+                dd = _global_score_one_pair_backward(dout[i, j], nnorm[i, j], sim_img_i_sent_j,
+                                                     img_region_index_with_max, **kwargs)
+            elif global_method == 'maxaccum':
+                dd = _global_score_one_pair_backward(dout[i, j], nnorm[i, j], sim_img_i_sent_j,
+                                                     img_region_index_with_max[(i, j)], **kwargs)
             else:
-                raise ValueError("only sum is supported")
+                raise ValueError("only sum and maxaccum are supported as methods to compute global scores")
+
+            d_local_scores[MEQ] = dd.ravel()
+
     return d_local_scores
 
 
