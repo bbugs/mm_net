@@ -964,14 +964,16 @@ def _global_score_one_pair_backward(dout, nnorm, sim_img_i_sent_j, img_region_in
 
     if global_method == 'sum':
         d_local_scores = np.ones((n_regions, n_words)) * dout / nnorm
-        if thrglobalscore:
-            d_local_scores[sim_img_i_sent_j < 0] = 0
+
     elif global_method == 'maxaccum':
         d_local_scores = np.zeros((n_regions, n_words))
         d_local_scores[img_region_index_with_max, np.arange(n_words)] = dout / nnorm
 
     else:
-        raise ValueError("global method must be sum")
+        raise ValueError("global method must be sum or maxaccum")
+
+    if thrglobalscore:
+        d_local_scores[sim_img_i_sent_j < 0] = 0
 
     return d_local_scores
 

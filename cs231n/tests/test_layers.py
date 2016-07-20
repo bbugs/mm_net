@@ -481,8 +481,6 @@ def test_global_scores_backward_maxaccum():
                                                    img_region_with_max,
                                                    global_method='maxaccum', thrglobalscore=False)
 
-    print d_local_scores
-
     # ltopg from matlab toy_example_cost_global_maxaccum.m:
     d_local_scores_true = np.array([[0, 0, -0.2222, 0, 0.2500, 0.2500, 0],
                                     [-0.2222, -0.2222, 0, -0.2222, 0, 0, 0],
@@ -495,6 +493,38 @@ def test_global_scores_backward_maxaccum():
         "global_scores_all_pairs did NOT pass gradient test (compared to matlab code)"
     assert np.allclose(loss, 155.0833), "loss did not pass compared to matlab code"
 
+    ##############################################
+    # global_method = 'maxaccum', thrglobalscore=True
+    ##############################################
+
+    img_sent_score_global, SGN, img_region_with_max = layers.global_scores_forward(sim_region_word, N,
+                                                                                   region2pair_id, word2pair_id,
+                                                                                   smooth_num=5, thrglobalscore=True,
+                                                                                   global_method='maxaccum')
+
+    loss, d_global_scores = layers.svm_struct_loss(img_sent_score_global, y, delta=40.0, avg=False)
+    #
+    assert np.allclose(loss, 155.7500)  # against matlab code toy_example_cost_global_maxaccum.m
+    assert np.allclose(img_sent_score_global, np.array([[3.1111, 1.5000], [2.1111, 2.6250]]), rtol=1e-04,
+                       atol=1e-04)  # SG in matlab
+    assert np.allclose(d_global_scores, np.array([[-2., 2.], [2., -2.]]), rtol=1e-04, atol=1e-04)  # dsg in matlab
+
+    # TODO: Implement support for maxaccum in the backward pass
+    d_local_scores = layers.global_scores_backward(d_global_scores, N, sim_region_word,
+                                                   region2pair_id, word2pair_id, SGN,
+                                                   img_region_with_max,
+                                                   global_method='maxaccum', thrglobalscore=True)
+
+    # ltopg from matlab toy_example_cost_global_maxaccum.m:
+    d_local_scores_true = np.array([[0, 0, -0.2222, 0, 0.2500, 0.2500, 0],
+                                    [-0.2222, -0.2222, 0, -0.2222, 0, 0, 0],
+                                    [0, 0, 0, 0, 0, 0, 0.2500],
+                                    [0, 0, 0, 0, -0.2500, -0.2500, 0],
+                                    [0.2222, 0, 0.2222, 0, 0, 0, -0.2500],
+                                    [0, 0.2222, 0, 0, 0, 0, 0]])
+    #
+    assert np.allclose(d_local_scores, d_local_scores_true, rtol=1e-04, atol=1e-04), \
+        "global_scores_all_pairs did NOT pass gradient test (compared to matlab code)"
 
 
 
@@ -513,7 +543,7 @@ if __name__ == "__main__":
     #
     # test_perform_mil()
     # test_sigmoid_cross_entropy_loss()
-    # test_global_score_one_pair()
-    # test_global_scores_forward()
-    # test_global_scores_backward()
+    test_global_score_one_pair()
+    test_global_scores_forward()
+    test_global_scores_backward()
     test_global_scores_backward_maxaccum()
