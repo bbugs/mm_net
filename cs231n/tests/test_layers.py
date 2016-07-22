@@ -528,8 +528,6 @@ def test_global_scores_backward_maxaccum():
 
 
 
-
-
 if __name__ == "__main__":
     # TODO: Use the test_suite from test_utils.py
     # test_svm_struct_loss()
