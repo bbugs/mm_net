@@ -699,7 +699,7 @@ def get_normalization_weights(y):
     # Create indicator variable MEQ that indicates correct pairs of region-word
     MEQ = np.zeros(y.shape, dtype=int)
     MEQ[y == 1] = 1
-    MEQ[y == -1] = 0
+    MEQ[y == -1] = 0  # TODO: Look if you really need this line
 
     ypos = np.zeros(y.shape)
     yneg = np.zeros(y.shape)
