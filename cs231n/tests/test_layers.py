@@ -475,7 +475,6 @@ def test_global_scores_backward_maxaccum():
                        atol=1e-04)  # SG in matlab
     assert np.allclose(d_global_scores, np.array([[-2., 2.], [2., -2.]]), rtol=1e-04, atol=1e-04)  # dsg in matlab
 
-    # TODO: Implement support for maxaccum in the backward pass
     d_local_scores = layers.global_scores_backward(d_global_scores, N, sim_region_word,
                                                    region2pair_id, word2pair_id, SGN,
                                                    img_region_with_max,
