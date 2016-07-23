@@ -1,3 +1,9 @@
+"""
+Test the MultiModalNet against matlab implementation
+susy_code_bare_bones/check_python_cost.m
+"""
+
+
 from cs231n.multimodal import multimodal_net
 import numpy as np
 import math
@@ -77,10 +83,15 @@ mmnet.set_global_score_hyperparams(global_margin=40., global_scale=1.,
 
 mmnet.set_local_hyperparams(local_margin=1., local_scale=1., do_mil=True)
 
-loss, grads = mmnet.loss(X_img, X_txt, region2pair_id, word2pair_id, useglobal=False, uselocal=True)
+loss, grads = mmnet.loss(X_img, X_txt, region2pair_id, word2pair_id, useglobal=True, uselocal=True)
 
 print loss
 print grads
+
+# TODO: in the matlab code, save the cost and gradients, then load them here and compare resutls.
+# For now, I just used a visual inspection and everything checks, except for the gradient wrt Wsem
+# because I cannot compute it in matlab because I don't have depTrees and have to spend more time
+# re-writing BackwardSents to not use depTrees.
 
 
 

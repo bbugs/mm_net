@@ -754,7 +754,7 @@ def perform_mil(x, y):
     return y_new
 
 
-def svm_two_classes(x, y, delta=1, do_mil=False, normalize=False):
+def svm_two_classes(x, y, delta=1, do_mil=False, normalize=True):
     """(np array, np array, int) -> float, np array
 
     author: susana

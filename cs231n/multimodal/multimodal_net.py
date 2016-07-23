@@ -84,7 +84,7 @@ class MultiModalNet(object):
         local_scale = self.local_scale
         do_mil = self.do_mil
 
-        loss, d_local_scores = svm_two_classes(sim_region_word, y, delta=local_margin, do_mil=do_mil)
+        loss, d_local_scores = svm_two_classes(sim_region_word, y, delta=local_margin, do_mil=do_mil, normalize=True)
 
         return loss * local_scale, d_local_scores * local_scale
 
@@ -208,13 +208,12 @@ class MultiModalNet(object):
         # ############################################################################
 
         d_proj_imgs, d_proj_txt = mult_backward(dscores, cache_mult)
+        # d_proj_txt is allDeltasSent in matlab
+        # d_proj_imgs is allDeltasImg
 
         dX_img, dWi2s, dbi2s = affine_backward(d_proj_imgs, cache_proj_imgs)
 
         dX_txt, dWsem, dbsem = affine_relu_backward(d_proj_txt.T, cache_proj_txt)
-
-        # d_proj_txt is allDeltasSent in matlab
-        # d_proj_imgs is allDeltasImg
 
         # add the contribution of the regularization term to the gradient
         dWi2s += self.reg * Wi2s

@@ -1,4 +1,6 @@
-
+"""
+Test MultiModalNet against numerical gradient
+"""
 
 from cs231n.multimodal import multimodal_net
 import numpy as np
@@ -27,8 +29,6 @@ print weight_scale
 
 model = multimodal_net.MultiModalNet(img_input_dim, txt_input_dim,
                                      hidden_dim, weight_scale=weight_scale, reg=0.0)
-model.set_loss_function(svm_loss)
-
 print 'Testing initialization ... '
 Wi2s_std = abs(model.params['Wi2s'].std() - std_img)
 bi2s = model.params['bi2s']
