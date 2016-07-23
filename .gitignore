@@ -5,5 +5,5 @@ cs231n/datasets/*
 *.jpg
 *.png
 .idea/*
-
+*.mat
 

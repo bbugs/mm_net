@@ -11,17 +11,12 @@ from cs231n.layer_utils import *
 from cs231n.multimodal import multimodal_utils
 
 
-def compute_region_setence_sim(sim):
-
-    return 0
-
-
 class MultiModalNet(object):
     """
 
     """
 
-    def __init__(self, img_input_dim, txt_input_dim, hidden_dim, weight_scale, reg=0.0):
+    def __init__(self, img_input_dim, txt_input_dim, hidden_dim, weight_scale, reg=0.0, seed=None):
         """
         In practice, the current recommendation is to use ReLU units
         and use the w = np.random.randn(n) * sqrt(2.0/n), as discussed in He et al..
@@ -46,6 +41,7 @@ class MultiModalNet(object):
         self.global_method = None
         self.thrglobalscore = None
         self.smooth_num = None
+        self.non_lin_fun = None
 
         # Initialize the weights and biases of the two-layer net. Weights    #
         # should be initialized from a Gaussian with standard deviation equal to   #
@@ -53,6 +49,9 @@ class MultiModalNet(object):
         # biases should be stored in the dictionary self.params, with first layer  #
         # weights and biases using the keys 'W1' and 'b1' and second layer weights #
         # and biases using the keys 'W2' and 'b2'.
+
+        if seed:
+            np.random.seed(seed)
 
         self.params['Wi2s'] = weight_scale['img'] * np.random.randn(img_input_dim, hidden_dim)
         self.params['bi2s'] = np.zeros(hidden_dim)
@@ -105,12 +104,12 @@ class MultiModalNet(object):
         smooth_num = self.smooth_num
 
         # numbers of pairs in batch
-        N = np.max(region2pair_id)
-        assert N == np.max(word2pair_id)
+        N = np.max(region2pair_id) + 1
+        assert N == np.max(word2pair_id) + 1
 
         y = np.arange(N)  # the correct pairs correspond to the diagonal elements
 
-        img_sent_score_global, SGN, img_region_with_max = global_scores_forward(sim_region_word, region2pair_id,
+        img_sent_score_global, SGN, img_region_with_max = global_scores_forward(sim_region_word, N, region2pair_id,
                                                                                 word2pair_id, smooth_num,
                                                                                 thrglobalscore=thrglobalscore,
                                                                                 global_method=global_method)
@@ -152,8 +151,8 @@ class MultiModalNet(object):
         ############################################################################
 
         # unnpack keyword arguments
-        uselocal = kwargs.pop('uselocal')
-        useglobal = kwargs.pop('useglobal')
+        uselocal = kwargs.pop('uselocal', False)
+        useglobal = kwargs.pop('useglobal', False)
 
         assert uselocal or useglobal, "at least one of them must be set to True"
 
@@ -171,6 +170,8 @@ class MultiModalNet(object):
 
         # Project text into multimodal space
         projected_txt, cache_proj_txt = affine_relu_forward(X_txt, Wsem, bsem)
+
+
 
         # Compute the similarity between regions and words
         sim_region_word, cache_mult = mult_forward(projected_imgs, projected_txt.T)
@@ -211,6 +212,9 @@ class MultiModalNet(object):
         dX_img, dWi2s, dbi2s = affine_backward(d_proj_imgs, cache_proj_imgs)
 
         dX_txt, dWsem, dbsem = affine_relu_backward(d_proj_txt.T, cache_proj_txt)
+
+        # d_proj_txt is allDeltasSent in matlab
+        # d_proj_imgs is allDeltasImg
 
         # add the contribution of the regularization term to the gradient
         dWi2s += self.reg * Wi2s

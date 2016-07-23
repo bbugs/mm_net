@@ -741,7 +741,9 @@ def perform_mil(x, y):
     if ixbad.size != 0:  # check if not empty
         # get the row id where the bad index happened
         fmaxi = np.argmax(fpos[:, ixbad], axis=0).ravel()
-        data = 2 * np.squeeze(np.ones(ixbad.shape))
+        data = np.atleast_1d(2 * np.squeeze(np.ones(ixbad.shape)))
+        if len(data.shape) == 0:
+            data = data.reshape(1)
         Ypos = Ypos + coo_matrix((data, (fmaxi, ixbad)), shape=y_copy.shape)  # flip from -1 to 1: add 2
 
     # replace the values of the correct region-word pairs with the sign(region' * word)
