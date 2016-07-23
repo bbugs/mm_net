@@ -151,8 +151,8 @@ class MultiModalNet(object):
         ############################################################################
 
         # unnpack keyword arguments
-        uselocal = kwargs.pop('uselocal', False)
-        useglobal = kwargs.pop('useglobal', False)
+        uselocal = kwargs['uselocal']
+        useglobal = kwargs['useglobal']
 
         assert uselocal or useglobal, "at least one of them must be set to True"
 
