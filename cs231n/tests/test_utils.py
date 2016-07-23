@@ -1,6 +1,19 @@
 import numpy as np
 
 
+def mk_random_pair_id(n_fragments_per_product, N):
+
+    n_fragments = N * n_fragments_per_product
+    fragment2pair_id = np.zeros(n_fragments, dtype=int)
+    index = 0
+    k = 0
+    while index < n_fragments:
+        fragment2pair_id[index: index + n_fragments_per_product] = k
+        k += 1
+        index += n_fragments_per_product
+    return fragment2pair_id
+
+
 def rel_error(x, y):
     """ returns relative error """
     return np.max(np.abs(x - y) / (np.maximum(1e-8, np.abs(x) + np.abs(y))))

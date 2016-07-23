@@ -7,28 +7,12 @@ susy_code_bare_bones/check_python_cost.m
 from cs231n.multimodal import multimodal_net
 import numpy as np
 import math
-from cs231n.gradient_check import eval_numerical_gradient
-from cs231n.tests.test_utils import rel_error
 from cs231n.layers import *
 import scipy.io as sio
+from cs231n.tests import test_utils
 
 rpath = '../../nips2014_karpathy/susy_code_bare_bones/'
 np.random.seed(42)
-
-def mk_random_pair_id(n_fragments_per_product, N):
-
-    n_fragments = N * n_fragments_per_product
-    fragment2pair_id = np.zeros(n_fragments, dtype=int)
-    index = 0
-    k = 0
-    while index < n_fragments:
-        fragment2pair_id[index: index + n_fragments_per_product] = k
-        k += 1
-        index += n_fragments_per_product
-    return fragment2pair_id
-
-# N_regions = 15  # number of regions in the batch
-# N_words = 28  # number of words in the batch
 
 N = 3  # number of image-sentence pairs in batch
 
@@ -41,8 +25,8 @@ n_regions = n_region_per_img * N
 n_words_per_img = 7
 n_words = n_words_per_img * N
 
-region2pair_id = mk_random_pair_id(n_region_per_img, N)
-word2pair_id = mk_random_pair_id(n_words_per_img, N)
+region2pair_id = test_utils.mk_random_pair_id(n_region_per_img, N)
+word2pair_id = test_utils.mk_random_pair_id(n_words_per_img, N)
 
 
 print region2pair_id
