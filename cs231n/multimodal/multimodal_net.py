@@ -171,8 +171,6 @@ class MultiModalNet(object):
         # Project text into multimodal space
         projected_txt, cache_proj_txt = affine_relu_forward(X_txt, Wsem, bsem)
 
-
-
         # Compute the similarity between regions and words
         sim_region_word, cache_mult = mult_forward(projected_imgs, projected_txt.T)
 

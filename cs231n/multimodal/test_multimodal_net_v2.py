@@ -18,13 +18,13 @@ rpath = '../../nips2014_karpathy/susy_code_bare_bones/'
 ####################################################################
 loss_params = {}
 
-loss_params['reg'] = 0.
+loss_params['reg'] = reg = 10.
 loss_params['finetuneCNN'] = False
 
 # local loss params
 loss_params['uselocal'] = uselocal = False
 loss_params['local_margin'] = local_margin = 1.
-loss_params['local_scale'] = local_scale = 1.
+loss_params['local_scale'] = local_scale = 10.
 loss_params['do_mil'] = do_mil = True
 
 # global loss params
@@ -33,14 +33,15 @@ loss_params['global_margin'] = global_margin = 40.
 loss_params['global_scale'] = global_scale = 1.
 loss_params['smooth_num'] = smotth_num = 5.
 loss_params['global_method'] = global_method = 'sum'
-loss_params['thrglobalscore'] = thrglobalscore = False
+loss_params['thrglobalscore'] = thrglobalscore = True
 
 sio.savemat(rpath + 'loss_params.mat', {'loss_params': loss_params})
 
 ####################################################################
 # Create random data
 ####################################################################
-np.random.seed(102)
+seed = 102
+np.random.seed(seed)
 
 N = 9  # number of image-sentence pairs in batch
 
@@ -71,7 +72,8 @@ X_txt = np.random.randn(n_words, txt_input_dim)
 # Initialize multimodal net
 ####################################################################
 
-mmnet = multimodal_net.MultiModalNet(img_input_dim, txt_input_dim, hidden_dim, weight_scale, seed=42)
+mmnet = multimodal_net.MultiModalNet(img_input_dim, txt_input_dim, hidden_dim, weight_scale,
+                                     reg=reg, seed=seed)
 
 Wi2s = mmnet.params['Wi2s']
 Wsem = mmnet.params['Wsem']
@@ -101,7 +103,6 @@ loss, grads = mmnet.loss(X_img, X_txt, region2pair_id, word2pair_id,
 ###################
 # Call Matlab check_python_cost.m to compute cost and gradients
 
-
 os.system("matlab -nojvm -nodesktop < {0}/check_python_cost.m".format(rpath))
 
 # Load matlab output
@@ -110,11 +111,18 @@ matlab_output = sio.loadmat(rpath + 'matlab_output.mat')
 print "\n\n\n", grads['Wi2s'].T, "\n\n\n"
 print matlab_output['df_Wi2s']
 
+print "\n\n\n", grads['Wsem'].T, "\n\n\n"
+print matlab_output['df_Wsem']
+
 print "loss", loss
 print "matlab_cost", matlab_output['cost'][0][0]
 
 assert np.allclose(loss, matlab_output['cost'][0][0])
 assert np.allclose(grads['Wi2s'].T, matlab_output['df_Wi2s'])
+assert np.allclose(grads['Wsem'].T, matlab_output['df_Wsem'])
+
+print test_utils.rel_error(grads['Wi2s'].T, matlab_output['df_Wi2s'])
+print test_utils.rel_error(grads['Wsem'].T, matlab_output['df_Wsem'])
 
 
 
