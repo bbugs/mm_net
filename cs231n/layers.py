@@ -699,7 +699,7 @@ def get_normalization_weights(y):
     # Create indicator variable MEQ that indicates correct pairs of region-word
     MEQ = np.zeros(y.shape, dtype=int)
     MEQ[y == 1] = 1
-    MEQ[y == -1] = 0  # TODO: Look if you really need this line
+    # MEQ[y == -1] = 0  # TODO: Look if you really need this line
 
     ypos = np.zeros(y.shape)
     yneg = np.zeros(y.shape)
@@ -709,6 +709,10 @@ def get_normalization_weights(y):
 
     tmp_pos = ypos / np.sum(ypos, axis=0)
     tmp_neg = yneg / np.sum(yneg, axis=0)
+
+    # substitute nan's by 0.
+    tmp_pos[np.isnan(tmp_pos)] = 0
+    tmp_neg[np.isnan(tmp_neg)] = 0
 
     W = np.multiply(tmp_pos, MEQ) + np.multiply(tmp_neg, np.logical_not(MEQ))
 
@@ -785,10 +789,10 @@ def svm_two_classes(x, y, delta=1, do_mil=False, normalize=True):
     if do_mil:
         Y = perform_mil(x, y_copy)
 
+    margins = np.maximum(0, delta - np.multiply(Y, x))
+
     if normalize:
         norm_weights = get_normalization_weights(Y)
-
-    margins = np.maximum(0, delta - np.multiply(Y, x))
 
     weighted_margins = np.multiply(norm_weights, margins)
     loss = np.sum(weighted_margins)

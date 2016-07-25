@@ -28,19 +28,19 @@ loss_params['local_scale'] = local_scale = 1.
 loss_params['do_mil'] = do_mil = True
 
 # global loss params
-loss_params['useglobal'] = useglobal = False
+loss_params['useglobal'] = useglobal = True
 loss_params['global_margin'] = global_margin = 40.
 loss_params['global_scale'] = global_scale = 1.
 loss_params['smooth_num'] = smotth_num = 5.
 loss_params['global_method'] = global_method = 'maxaccum'
-loss_params['thrglobalscore'] = thrglobalscore = False
+loss_params['thrglobalscore'] = thrglobalscore = True
 
 sio.savemat(rpath + 'loss_params.mat', {'loss_params': loss_params})
 
 ####################################################################
 # Create random data
 ####################################################################
-np.random.seed(42)
+np.random.seed(102)
 
 N = 23  # number of image-sentence pairs in batch
 
@@ -98,7 +98,7 @@ loss, grads = mmnet.loss(X_img, X_txt, region2pair_id, word2pair_id,
                          useglobal=useglobal, uselocal=uselocal)
 
 print "loss", loss
-# print grads
+print grads['Wi2s'].T
 
 ###################
 # Call Matlab check_python_cost.m to create the
@@ -112,8 +112,9 @@ os.system("matlab -nojvm -nodesktop < {0}/check_python_cost.m".format(rpath))
 
 matlab_output = sio.loadmat(rpath + 'matlab_output.mat')
 
-print matlab_output['cost']
 print matlab_output['df_Wi2s']
+print "matlab_cost", matlab_output['cost'][0][0]
+
 
 assert np.allclose(loss, matlab_output['cost'][0][0])
 assert np.allclose(grads['Wi2s'].T, matlab_output['df_Wi2s'])
