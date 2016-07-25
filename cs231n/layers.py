@@ -699,7 +699,6 @@ def get_normalization_weights(y):
     # Create indicator variable MEQ that indicates correct pairs of region-word
     MEQ = np.zeros(y.shape, dtype=int)
     MEQ[y == 1] = 1
-    # MEQ[y == -1] = 0  # TODO: Look if you really need this line
 
     ypos = np.zeros(y.shape)
     yneg = np.zeros(y.shape)
@@ -884,19 +883,19 @@ def _global_score_one_pair_forward(sim_img_i_sent_j, smooth_num, **kwargs):
         sim_img_i_sent_j[sim_img_i_sent_j < 0] = 0  # threshold at zero
 
     if global_method == 'sum':
-        gloabal_score = np.sum(sim_img_i_sent_j) # score of image-sentence
+        global_score = np.sum(sim_img_i_sent_j) # score of image-sentence
 
     elif global_method == 'maxaccum':
         # for each word, find the closest (in dot product) image region
         max_sim_for_each_word = np.max(sim_img_i_sent_j, axis=0)  # the max value of sim for each word (1, num_words)
         img_region_index_with_max = np.argmax(sim_img_i_sent_j, axis=0)  # recall this for backprop (1, num_words)
 
-        gloabal_score = np.sum(max_sim_for_each_word)  # score of image-sentence
+        global_score = np.sum(max_sim_for_each_word)  # score of image-sentence
     else:
         raise ValueError("global method must be either sum or maxaccum")
 
     nnorm = float(num_words + smooth_num)
-    gloabal_score /= nnorm
+    global_score /= nnorm
 
     cache = {}
     cache['nnorm'] = nnorm
@@ -904,7 +903,7 @@ def _global_score_one_pair_forward(sim_img_i_sent_j, smooth_num, **kwargs):
     cache['n_regions_n_words'] = sim_img_i_sent_j.shape
     # cache['sim_img_i_sent_j'] = sim_img_i_sent_j
 
-    return gloabal_score, cache
+    return global_score, cache
 
 
 def global_scores_forward(sim_region_word, N, region2pair_id, word2pair_id, smooth_num=5, **kwargs):

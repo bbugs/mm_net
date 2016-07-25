@@ -22,7 +22,7 @@ loss_params['reg'] = 0.
 loss_params['finetuneCNN'] = False
 
 # local loss params
-loss_params['uselocal'] = uselocal = True
+loss_params['uselocal'] = uselocal = False
 loss_params['local_margin'] = local_margin = 1.
 loss_params['local_scale'] = local_scale = 1.
 loss_params['do_mil'] = do_mil = True
@@ -32,8 +32,8 @@ loss_params['useglobal'] = useglobal = True
 loss_params['global_margin'] = global_margin = 40.
 loss_params['global_scale'] = global_scale = 1.
 loss_params['smooth_num'] = smotth_num = 5.
-loss_params['global_method'] = global_method = 'maxaccum'
-loss_params['thrglobalscore'] = thrglobalscore = True
+loss_params['global_method'] = global_method = 'sum'
+loss_params['thrglobalscore'] = thrglobalscore = False
 
 sio.savemat(rpath + 'loss_params.mat', {'loss_params': loss_params})
 
@@ -42,7 +42,7 @@ sio.savemat(rpath + 'loss_params.mat', {'loss_params': loss_params})
 ####################################################################
 np.random.seed(102)
 
-N = 23  # number of image-sentence pairs in batch
+N = 9  # number of image-sentence pairs in batch
 
 n_sent_per_img = 5
 n_sent = n_sent_per_img * N
@@ -97,29 +97,25 @@ mmnet.set_local_hyperparams(local_margin=local_margin, local_scale=local_scale, 
 loss, grads = mmnet.loss(X_img, X_txt, region2pair_id, word2pair_id,
                          useglobal=useglobal, uselocal=uselocal)
 
-print "loss", loss
-print grads['Wi2s'].T
 
 ###################
-# Call Matlab check_python_cost.m to create the
+# Call Matlab check_python_cost.m to compute cost and gradients
 
-# TODO: in the matlab code, save the cost and gradients, then load them here and compare resutls.
-# For now, I just used a visual inspection and everything checks, except for the gradient wrt Wsem
-# because I cannot compute it in matlab because I don't have depTrees and have to spend more time
-# re-writing BackwardSents to not use depTrees.
 
 os.system("matlab -nojvm -nodesktop < {0}/check_python_cost.m".format(rpath))
 
+# Load matlab output
 matlab_output = sio.loadmat(rpath + 'matlab_output.mat')
 
+print "\n\n\n", grads['Wi2s'].T, "\n\n\n"
 print matlab_output['df_Wi2s']
-print "matlab_cost", matlab_output['cost'][0][0]
 
+print "loss", loss
+print "matlab_cost", matlab_output['cost'][0][0]
 
 assert np.allclose(loss, matlab_output['cost'][0][0])
 assert np.allclose(grads['Wi2s'].T, matlab_output['df_Wi2s'])
 
-# y = np.random.randint(N_words, size=N_img)  # indicate which word is correct (happens together) with each image
 
 
 
