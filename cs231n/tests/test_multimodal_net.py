@@ -19,17 +19,17 @@ loss_params['reg'] = reg = 0.
 loss_params['finetuneCNN'] = False
 
 # local loss params
-loss_params['uselocal'] = uselocal = True
+loss_params['uselocal'] = uselocal = False
 loss_params['local_margin'] = local_margin = 1.
 loss_params['local_scale'] = local_scale = 1.
 loss_params['do_mil'] = do_mil = False
 
 # global loss params
-loss_params['useglobal'] = useglobal = False
+loss_params['useglobal'] = useglobal = True
 loss_params['global_margin'] = global_margin = 40.
 loss_params['global_scale'] = global_scale = 1.
 loss_params['smooth_num'] = smotth_num = 5.
-loss_params['global_method'] = global_method = 'maxaccum'
+loss_params['global_method'] = global_method = 'sum'
 loss_params['thrglobalscore'] = thrglobalscore = False
 
 ####################################################################

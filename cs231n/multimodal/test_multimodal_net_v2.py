@@ -18,11 +18,11 @@ rpath = '../../nips2014_karpathy/susy_code_bare_bones/'
 ####################################################################
 loss_params = {}
 
-loss_params['reg'] = reg = 10.
+loss_params['reg'] = reg = 0.
 loss_params['finetuneCNN'] = False
 
 # local loss params
-loss_params['uselocal'] = uselocal = False
+loss_params['uselocal'] = uselocal = True
 loss_params['local_margin'] = local_margin = 1.
 loss_params['local_scale'] = local_scale = 10.
 loss_params['do_mil'] = do_mil = True
@@ -40,7 +40,7 @@ sio.savemat(rpath + 'loss_params.mat', {'loss_params': loss_params})
 ####################################################################
 # Create random data
 ####################################################################
-seed = 102
+seed = 42
 np.random.seed(seed)
 
 N = 9  # number of image-sentence pairs in batch
@@ -68,6 +68,12 @@ weight_scale = {'img': std_img, 'txt': std_txt}
 X_img = np.random.randn(n_regions, img_input_dim)
 X_txt = np.random.randn(n_words, txt_input_dim)
 
+# Replace the last column of X by 1's so that the last row of W is b.
+X_img[:, -1] = 1
+X_txt[:, -1] = 1
+
+
+
 ####################################################################
 # Initialize multimodal net
 ####################################################################
@@ -79,6 +85,10 @@ Wi2s = mmnet.params['Wi2s']
 Wsem = mmnet.params['Wsem']
 bi2s = mmnet.params['bi2s']
 bsem = mmnet.params['bsem']
+
+# Replace the last row of W so that it becomes b
+Wi2s[-1, :] = 0  # initialize b at zero
+Wsem[-1, :] = 0  # initialize b at zero
 
 sio.savemat(rpath + 'X_img.mat', {'X_img': X_img})
 sio.savemat(rpath + 'X_txt.mat', {'X_txt': X_txt})
@@ -108,12 +118,27 @@ os.system("matlab -nojvm -nodesktop < {0}/check_python_cost.m".format(rpath))
 # Load matlab output
 matlab_output = sio.loadmat(rpath + 'matlab_output.mat')
 
+
+# Compare the bias weights
+print "\n\n, bsem \n", grads['bsem']
+print "\n\n, bsem matlab \n",matlab_output['df_Wsem'].T[-1,:]
+
+bsem_matlab = matlab_output['df_Wsem'].T[-1, :]
+assert np.allclose(grads['bsem'], bsem_matlab)
+
+print "\n\n, bi2s \n", grads['bi2s']
+print "\n\n, bi2s matlab \n", matlab_output['df_Wi2s'].T[-1, :]
+bi2s_matlab = matlab_output['df_Wi2s'].T[-1, :]
+assert np.allclose(grads['bi2s'], bi2s_matlab)
+
+# Compare the weights
 print "\n\n\n", grads['Wi2s'].T, "\n\n\n"
 print matlab_output['df_Wi2s']
 
 print "\n\n\n", grads['Wsem'].T, "\n\n\n"
 print matlab_output['df_Wsem']
 
+# Compare the loss
 print "loss", loss
 print "matlab_cost", matlab_output['cost'][0][0]
 
