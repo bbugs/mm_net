@@ -24,8 +24,8 @@ loss_params['finetuneCNN'] = False
 # local loss params
 loss_params['uselocal'] = uselocal = True
 loss_params['local_margin'] = local_margin = 1.
-loss_params['local_scale'] = local_scale = 10.
-loss_params['do_mil'] = do_mil = True
+loss_params['local_scale'] = local_scale = 1.
+loss_params['do_mil'] = do_mil = False
 
 # global loss params
 loss_params['useglobal'] = useglobal = True
@@ -33,31 +33,31 @@ loss_params['global_margin'] = global_margin = 40.
 loss_params['global_scale'] = global_scale = 1.
 loss_params['smooth_num'] = smotth_num = 5.
 loss_params['global_method'] = global_method = 'sum'
-loss_params['thrglobalscore'] = thrglobalscore = True
+loss_params['thrglobalscore'] = thrglobalscore = False
 
 sio.savemat(rpath + 'loss_params.mat', {'loss_params': loss_params})
 
 ####################################################################
 # Create random data
 ####################################################################
-seed = 42
+seed = 102
 np.random.seed(seed)
 
-N = 9  # number of image-sentence pairs in batch
+N = 100  # number of image-sentence pairs in batch
 
 n_sent_per_img = 5
 n_sent = n_sent_per_img * N
 
 n_region_per_img = 3
-n_regions = n_region_per_img * N
+n_regions = n_region_per_img * N  # number of regions in batch
 
 n_words_per_img = 4
-n_words = n_words_per_img * N
+n_words = n_words_per_img * N  # number of words in batch
 
 region2pair_id = test_utils.mk_random_pair_id(n_region_per_img, N)
 word2pair_id = test_utils.mk_random_pair_id(n_words_per_img, N)
 
-img_input_dim = 13 # size of cnn
+img_input_dim = 13  # size of cnn
 txt_input_dim = 11  # size of word2vec pretrained vectors
 hidden_dim = 7  # size of multimodal space
 
