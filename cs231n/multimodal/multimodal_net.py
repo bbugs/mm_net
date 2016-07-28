@@ -16,7 +16,8 @@ class MultiModalNet(object):
 
     """
 
-    def __init__(self, img_input_dim, txt_input_dim, hidden_dim, weight_scale, reg=0.0, seed=None):
+    def __init__(self, img_input_dim, txt_input_dim, hidden_dim, weight_scale, reg=0.0, seed=None,
+                 finetune_cnn=False, finetune_w2v=False):
         """
         In practice, the current recommendation is to use ReLU units
         and use the w = np.random.randn(n) * sqrt(2.0/n), as discussed in He et al..
@@ -43,6 +44,10 @@ class MultiModalNet(object):
         self.smooth_num = None
         self.non_lin_fun = None
 
+        # Set finetuning options
+        self.finetune_cnn = finetune_cnn
+        self.finetune_w2v = finetune_w2v
+
         # Initialize the weights and biases of the two-layer net. Weights    #
         # should be initialized from a Gaussian with standard deviation equal to   #
         # weight_scale, and biases should be initialized to zero. All weights and  #
@@ -54,9 +59,17 @@ class MultiModalNet(object):
             np.random.seed(seed)
 
         self.params['Wi2s'] = weight_scale['img'] * np.random.randn(img_input_dim, hidden_dim)
-        self.params['bi2s'] = np.zeros(hidden_dim)
+        self.params['bi2s'] = weight_scale['img'] * np.random.randn(hidden_dim)
         self.params['Wsem'] = weight_scale['txt'] * np.random.randn(txt_input_dim, hidden_dim)
-        self.params['bsem'] = np.zeros(hidden_dim)
+        self.params['bsem'] = weight_scale['txt'] * np.random.randn(hidden_dim)
+
+        if finetune_cnn:
+            self.params['Wcnn'] = weight_scale['img'] * np.random.randn(img_input_dim, img_input_dim)
+            self.params['bcnn'] = weight_scale['img'] * np.random.randn(img_input_dim)
+
+        if finetune_w2v:
+            self.params['Ww2v'] = weight_scale['txt'] * np.random.randn(txt_input_dim, txt_input_dim)
+            self.params['bw2v'] = weight_scale['txt'] * np.random.randn(txt_input_dim)
 
     def set_global_score_hyperparams(self, global_margin=40., global_scale=1., smooth_num=5.,
                                      global_method='maxaccum', thrglobalscore=False):
@@ -166,9 +179,19 @@ class MultiModalNet(object):
         bsem = self.params['bsem']  # (hidden_dim,)
 
         # Project images into multimodal space
+        if self.finetune_cnn:
+            Wcnn = self.params['Wcnn']
+            bcnn = self.params['bcnn']
+            X_img, cache_proj_imgs_ftune = affine_relu_forward(X_img, Wcnn, bcnn)
+
         projected_imgs, cache_proj_imgs = affine_forward(X_img, Wi2s, bi2s)
 
         # Project text into multimodal space
+        if self.finetune_w2v:
+            Ww2v = self.params['Ww2v']
+            bw2v = self.params['bw2v']
+            X_txt, cache_proj_txt_ftune = affine_forward(X_txt, Ww2v, bw2v)
+
         projected_txt, cache_proj_txt = affine_relu_forward(X_txt, Wsem, bsem)
 
         # Compute the similarity between regions and words
@@ -179,7 +202,7 @@ class MultiModalNet(object):
         if region2pair_id is None and word2pair_id is None:
             return sim_region_word
 
-        dscores = np.zeros((sim_region_word.shape))
+        dscores = np.zeros(sim_region_word.shape)
 
         if uselocal:
             # make an appropriate y
@@ -196,7 +219,13 @@ class MultiModalNet(object):
         reg_loss = 0.5 * self.reg * (np.sum(Wi2s * Wi2s) +
                                      np.sum(Wsem * Wsem))
 
+        if self.finetune_cnn:
+            reg_loss += 0.5 * self.reg * np.sum(Wcnn * Wcnn)
+        if self.finetune_w2v:
+            reg_loss += 0.5 * self.reg * np.sum(Ww2v * Ww2v)
+
         loss += reg_loss  # add the regularization loss.
+
 
         # ############################################################################
         # # Implement the backward pass for the multimodal net.
@@ -211,7 +240,13 @@ class MultiModalNet(object):
 
         dX_img, dWi2s, dbi2s = affine_backward(d_proj_imgs, cache_proj_imgs)
 
+        if self.finetune_cnn:
+            dX_img_, dWcnn, dbcnn = affine_relu_backward(dX_img, cache_proj_imgs_ftune)
+
         dX_txt, dWsem, dbsem = affine_relu_backward(d_proj_txt.T, cache_proj_txt)
+
+        if self.finetune_w2v:
+            dX_txt_, dWw2v, dbw2v = affine_backward(dX_txt, cache_proj_txt_ftune)
 
         # add the contribution of the regularization term to the gradient
         dWi2s += self.reg * Wi2s
@@ -224,6 +259,14 @@ class MultiModalNet(object):
         grads['Wsem'] = dWsem
         grads['bsem'] = dbsem
         # grads['X_txt'] = dX_txt
+
+        if self.finetune_cnn:
+            grads['Wcnn'] = dWcnn + self.reg * Wcnn
+            grads['bcnn'] = dbcnn
+
+        if self.finetune_w2v:
+            grads['Ww2v'] = dWw2v + self.reg * Ww2v
+            grads['bw2v'] = dbw2v
 
         return loss, grads
 

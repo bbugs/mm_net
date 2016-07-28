@@ -1,5 +1,5 @@
 """
-Test MultiModalNet against numerical gradient
+Test MultiModalNet against numerical gradient and finetuning
 """
 
 from cs231n.multimodal import multimodal_net
@@ -16,16 +16,17 @@ from cs231n.layers import *
 loss_params = {}
 
 loss_params['reg'] = reg = 0.
-loss_params['finetuneCNN'] = False
+loss_params['finetune_cnn'] = finetune_cnn = True
+loss_params['finetune_w2v'] = finetune_w2v = True
 
 # local loss params
-loss_params['uselocal'] = uselocal = False
+loss_params['uselocal'] = uselocal = True
 loss_params['local_margin'] = local_margin = 1.
 loss_params['local_scale'] = local_scale = 1.
 loss_params['do_mil'] = do_mil = False
 
 # global loss params
-loss_params['useglobal'] = useglobal = True
+loss_params['useglobal'] = useglobal = False
 loss_params['global_margin'] = global_margin = 40.
 loss_params['global_scale'] = global_scale = 1.
 loss_params['smooth_num'] = smotth_num = 5.
@@ -60,6 +61,7 @@ std_img = math.sqrt(2. / img_input_dim)
 std_txt = math.sqrt(2. / txt_input_dim)
 weight_scale = {'img': std_img, 'txt': std_txt}
 
+
 X_img = np.random.randn(n_regions, img_input_dim)
 X_txt = np.random.randn(n_words, txt_input_dim)
 
@@ -68,7 +70,10 @@ X_txt = np.random.randn(n_words, txt_input_dim)
 # Initialize multimodal net
 ####################################################################
 
-mmnet = multimodal_net.MultiModalNet(img_input_dim, txt_input_dim, hidden_dim, weight_scale, reg=reg, seed=seed)
+mmnet = multimodal_net.MultiModalNet(img_input_dim, txt_input_dim,
+                                     hidden_dim, weight_scale, reg=reg,
+                                     seed=seed, finetune_cnn=finetune_cnn,
+                                     finetune_w2v=finetune_w2v)
 
 mmnet.set_global_score_hyperparams(global_margin=global_margin, global_scale=global_scale,
                                    smooth_num=smotth_num, global_method=global_method,
@@ -80,7 +85,7 @@ print 'Testing initialization ... '
 Wi2s_std = abs(mmnet.params['Wi2s'].std() - std_img)
 # bi2s = mmnet.params['bi2s']
 Wsem_std = abs(mmnet.params['Wsem'].std() - std_txt)
-bsem = mmnet.params['bsem']
+# bsem = mmnet.params['bsem']
 assert Wi2s_std < std_img, 'First layer weights do not seem right'
 # assert np.all(bi2s == 0), 'First layer biases do not seem right'
 assert Wsem_std < std_txt, 'Second layer weights do not seem right'
@@ -108,8 +113,7 @@ for reg in [0.0, 0.7, 10, 100, 1000]:
                                  uselocal=uselocal, useglobal=useglobal)[0]
         grad_num = eval_numerical_gradient(f, mmnet.params[name], verbose=False)
         print '\n%s relative error: %.2e' % (name, rel_error(grad_num, grads[name]))
-        print "grad_analaliic\n", grads[name]
-        print "grad_num\n", grad_num
-
+        # print "grad_analaliic\n", name, "\n", grads[name]
+        # print "grad_num\n", name, "\n", grad_num
 
 
