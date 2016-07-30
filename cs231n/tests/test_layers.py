@@ -528,17 +528,17 @@ def test_global_scores_backward_maxaccum():
 
 if __name__ == "__main__":
     # TODO: Use the test_suite from test_utils.py
-    # test_svm_struct_loss()
-    # test_svm_struct_loss_with_num_gradient()
+    test_svm_struct_loss()
+    test_svm_struct_loss_with_num_gradient()
 
     # run_suite()
     #
-    # test_svm_two_classes()
-    #
-    # test_get_normalization_weights()
-    #
-    # test_perform_mil()
-    # test_sigmoid_cross_entropy_loss()
+    test_svm_two_classes()
+
+    test_get_normalization_weights()
+
+    test_perform_mil()
+    test_sigmoid_cross_entropy_loss()
     test_global_score_one_pair()
     test_global_scores_forward()
     test_global_scores_backward()
