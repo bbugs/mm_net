@@ -164,8 +164,13 @@ class MultiModalNet(object):
         ############################################################################
 
         # unnpack keyword arguments
-        uselocal = kwargs['uselocal']
-        useglobal = kwargs['useglobal']
+        uselocal = kwargs.pop('uselocal')
+        useglobal = kwargs.pop('useglobal')
+
+        # Throw an error if there are extra keyword arguments
+        if len(kwargs) > 0:
+            extra = ', '.join('"%s"' % k for k in kwargs.keys())
+            raise ValueError('Unrecognized arguments %s' % extra)
 
         assert uselocal or useglobal, "at least one of them must be set to True"
 
