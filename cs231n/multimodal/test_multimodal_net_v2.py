@@ -22,7 +22,7 @@ loss_params['reg'] = reg = 0.
 loss_params['finetuneCNN'] = False
 
 # local loss params
-loss_params['uselocal'] = uselocal = True
+loss_params['uselocal'] = uselocal = False
 loss_params['local_margin'] = local_margin = 1.
 loss_params['local_scale'] = local_scale = 1.
 loss_params['do_mil'] = do_mil = False
@@ -83,19 +83,20 @@ mmnet = multimodal_net.MultiModalNet(img_input_dim, txt_input_dim, hidden_dim, w
 
 Wi2s = mmnet.params['Wi2s']
 Wsem = mmnet.params['Wsem']
-bi2s = mmnet.params['bi2s']
-bsem = mmnet.params['bsem']
+# When comparing with matlab, bs should always be zeros in the multimodal net
+bi2s = mmnet.params['bi2s'] = np.zeros(hidden_dim)  # set b's to zero so we can compare with matlab
+bsem = mmnet.params['bsem'] = np.zeros(hidden_dim)
 
-# Replace the last row of W so that it becomes b
-Wi2s[-1, :] = 0  # initialize b at zero
-Wsem[-1, :] = 0  # initialize b at zero
+# The last row of W becomes b
+Wi2s[-1, :] = 0  # Set the last row of W to zero
+Wsem[-1, :] = 0  # Set the last row of W to zero
 
 sio.savemat(rpath + 'X_img.mat', {'X_img': X_img})
 sio.savemat(rpath + 'X_txt.mat', {'X_txt': X_txt})
 sio.savemat(rpath + 'Wi2s.mat', {'Wi2s': Wi2s})
 sio.savemat(rpath + 'Wsem.mat', {'Wsem': Wsem})
-sio.savemat(rpath + 'bi2s.mat', {'bi2s': bi2s})
-sio.savemat(rpath + 'bsem.mat', {'bsem': bsem})
+# sio.savemat(rpath + 'bi2s.mat', {'bi2s': bi2s})
+# sio.savemat(rpath + 'bsem.mat', {'bsem': bsem})
 sio.savemat(rpath + 'region2pair_id.mat', {'region2pair_id': region2pair_id})
 sio.savemat(rpath + 'word2pair_id.mat', {'word2pair_id': word2pair_id})
 
@@ -118,10 +119,15 @@ os.system("matlab -nojvm -nodesktop < {0}/check_python_cost.m".format(rpath))
 # Load matlab output
 matlab_output = sio.loadmat(rpath + 'matlab_output.mat')
 
+# Compare the loss
+print "\nloss", loss
+print "matlab_cost", matlab_output['cost'][0][0]
+
+assert np.allclose(loss, matlab_output['cost'][0][0])
 
 # Compare the bias weights
 print "\n\n, bsem \n", grads['bsem']
-print "\n\n, bsem matlab \n",matlab_output['df_Wsem'].T[-1,:]
+print "\n\n, bsem matlab \n", matlab_output['df_Wsem'].T[-1, :]
 
 bsem_matlab = matlab_output['df_Wsem'].T[-1, :]
 assert np.allclose(grads['bsem'], bsem_matlab)
@@ -132,17 +138,12 @@ bi2s_matlab = matlab_output['df_Wi2s'].T[-1, :]
 assert np.allclose(grads['bi2s'], bi2s_matlab)
 
 # Compare the weights
-print "\n\n\n", grads['Wi2s'].T, "\n\n\n"
-print matlab_output['df_Wi2s']
+print "\n\n\n dWi2s\n", grads['Wi2s'].T, "\n\n\n"
+print "matlab df_Wi2s\n", matlab_output['df_Wi2s']
 
-print "\n\n\n", grads['Wsem'].T, "\n\n\n"
-print matlab_output['df_Wsem']
+print "\n\n\n dWsem\n", grads['Wsem'].T, "\n\n\n"
+print "matlab df_Wsem\n", matlab_output['df_Wsem']
 
-# Compare the loss
-print "loss", loss
-print "matlab_cost", matlab_output['cost'][0][0]
-
-assert np.allclose(loss, matlab_output['cost'][0][0])
 assert np.allclose(grads['Wi2s'].T, matlab_output['df_Wi2s'])
 assert np.allclose(grads['Wsem'].T, matlab_output['df_Wsem'])
 
