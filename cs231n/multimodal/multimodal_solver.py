@@ -1,6 +1,7 @@
 import numpy as np
 
 from cs231n import optim
+from cs231n.multimodal.evaluation import metrics
 
 # TODO: Sus, study the Solver code and see how much it needs to be
 
@@ -41,13 +42,19 @@ class MultiModalSolver(object):
         """
         self.model = model
 
+        # Train data
         self.X_img_train = data['X_img_train']
         self.X_txt_train = data['X_txt_train']
-        self.y_train = data['y_train']
 
+        self.region2pair_id_train = data['region2pair_id_train']
+        self.word2pair_id_train = data['word2pair_id_train']
+
+        # Validation data
         self.X_img_val = data['X_img_val']
         self.X_txt_val = data['X_txt_val']
-        self.y_val = data['y_val']
+
+        self.region2pair_id_val = data['region2pair_id_val']
+        self.word2pair_id_val = data['word2pair_id_val']
 
         # Unpack keyword arguments
         self.update_rule = kwargs.pop('update_rule', 'sgd')
@@ -79,11 +86,11 @@ class MultiModalSolver(object):
         """
         # Set up some variables for book-keeping
         self.epoch = 0
-        self.best_val_acc = 0
+        self.best_val_f1 = 0
         self.best_params = {}
         self.loss_history = []
-        self.train_acc_history = []
-        self.val_acc_history = []
+        self.train_f1_history = []
+        self.val_f1_history = []
 
         # Make a deep copy of the optim_config for each parameter
         self.optim_configs = {}
@@ -113,6 +120,20 @@ class MultiModalSolver(object):
             next_w, next_config = self.update_rule(w, dw, config)
             self.model.params[p] = next_w
             self.optim_configs[p] = next_config
+
+    def check_f1(self, X_img, X_txt, y_true):
+        """
+
+        Check f1 measure (combines both precision and recall)
+
+        """
+        sim_region_word = self.model.loss(X_img, X_txt)
+        y_pred = np.ones(sim_region_word.shape)
+        y_pred[sim_region_word < 0] = -1
+
+        p, r, f1 = metrics.precision_recall_f1(y_pred, y_true, raw_scores=False)
+
+        return f1
 
     def check_accuracy(self, X, y, num_samples=None, batch_size=100):
         """
@@ -186,16 +207,16 @@ class MultiModalSolver(object):
                 train_acc = self.check_accuracy(self.X_train, self.y_train,
                                                 num_samples=1000)
                 val_acc = self.check_accuracy(self.X_val, self.y_val)
-                self.train_acc_history.append(train_acc)
-                self.val_acc_history.append(val_acc)
+                self.train_f1_history.append(train_acc)
+                self.val_f1_history.append(val_acc)
 
                 if self.verbose:
                     print '(Epoch %d / %d) train acc: %f; val_acc: %f' % (
                         self.epoch, self.num_epochs, train_acc, val_acc)
 
                 # Keep track of the best model
-                if val_acc > self.best_val_acc:
-                    self.best_val_acc = val_acc
+                if val_acc > self.best_val_f1:
+                    self.best_val_f1 = val_acc
                     self.best_params = {}
                     for k, v in self.model.params.iteritems():
                         self.best_params[k] = v.copy()

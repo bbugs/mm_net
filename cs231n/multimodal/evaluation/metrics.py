@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def precision_recall_f1(y_pred, y_true):
+def precision_recall_f1(y_pred, y_true, raw_scores=False):
     """(np.array, np.array) -> float, float, float
 
     Inputs:
@@ -12,9 +12,15 @@ def precision_recall_f1(y_pred, y_true):
       indicates which words are actually present for each image (+1 or -1)
 
     Returns:
+    if raw_scores is False, return:
     - precision: P = tp/(tp + fp)
     - recall: R = tp/(tp + fn)
     - f1 = 2 * P * R / (P + R)
+
+    if raw_scores is True, return:
+    - true positives
+    - false positives
+    - false negatives
 
                 Retrieved
                  Yes  No
@@ -40,6 +46,9 @@ def precision_recall_f1(y_pred, y_true):
     false_negatives = np.zeros(y_pred.shape)
     false_negatives[np.logical_and((y_true == 1), (y_pred == -1))] = 1
     false_negatives = np.sum(false_negatives)
+
+    if raw_scores: # return tp, fp, fn
+        return true_pos, false_positives, false_negatives
 
     precision = float(true_pos) / (true_pos + false_positives)
     recall = float(true_pos) / (true_pos + false_negatives)
