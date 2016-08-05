@@ -56,6 +56,9 @@ class MultiModalSolver(object):
         self.region2pair_id_val = data['region2pair_id_val']
         self.word2pair_id_val = data['word2pair_id_val']
 
+        # Data to evaluate f1 on training and validation set
+        self.
+
         # Unpack keyword arguments
         self.update_rule = kwargs.pop('update_rule', 'sgd')
         self.optim_config = kwargs.pop('optim_config', {})
@@ -129,11 +132,55 @@ class MultiModalSolver(object):
         """
         sim_region_word = self.model.loss(X_img, X_txt)
         y_pred = np.ones(sim_region_word.shape)
-        y_pred[sim_region_word < 0] = -1
+        y_pred[sim_region_word < 0] = -1  # when the sim scores are < 0, classification is negative
 
         p, r, f1 = metrics.precision_recall_f1(y_pred, y_true, raw_scores=False)
 
         return f1
+
+    def check_f1_img2txt(self, X_img, X_txt_all_vocab, y_true_all_vocab):
+        """
+
+        Inputs:
+        - X_img: np array of size (n_regions, cnn_dim)
+        - X_txt_all_vocab: np array of size (V, word2vec_dim). This is basically the original
+        word embeddings.
+        - y_true_all_vocab: np array of size (n_regions, V). The i,j element indicates
+        whether or not (+1,-1) the ith image region corresponds to the to the jth word.
+
+        You can set y_true_all_vocab to contain +1 only for zappos words
+        (or other external visual vocab)
+        and thus measure how well the network can retrieve those visual words. But
+        this function does not need to know, it just needs +1 or -1 for all region-word pairs
+        """
+        sim_region_word = self.model.loss(X_img, X_txt_all_vocab)
+        y_pred = np.ones(sim_region_word.shape)
+        y_pred[sim_region_word < 0] = -1  # when the sim scores are < 0, classification is negative
+
+        p, r, f1 = metrics.precision_recall_f1(y_pred, y_true_all_vocab, raw_scores=False)
+
+        return f1
+
+    def check_f1_txt2img(self, X_img_target, X_txt_zappos_only, y_true_zappos_only):
+
+        """
+        Inputs:
+
+        - X_img_target: np array of size (n_imgs_in_target_collection, cnn_dim)
+        - X_txt_zappos_only: np array of size (V_zappos, word2vec_dim)
+        - y_true_all_vocab: np array of size (V_zappos, n_regions_in_target). The i,j element indicates
+        whether or not (+1,-1) the ith zappos word corresponds to the jth image.
+
+        """
+        sim_word_region = self.model.loss(X_img_target, X_txt_zappos_only).T
+        y_pred = np.ones(sim_word_region.shape)
+        y_pred[sim_word_region < 0] = -1  # when the sim scores are < 0, classification is negative
+
+        p, r, f1 = metrics.precision_recall_f1(y_pred, y_true_zappos_only, raw_scores=False)
+
+        return f1
+
+
 
     def check_accuracy(self, X, y, num_samples=None, batch_size=100):
         """
