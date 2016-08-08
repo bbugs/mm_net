@@ -7,10 +7,13 @@ d = data_config.dc
 json_file = JsonFile(d['json_path_test'], num_items=10)
 
 print json_file.get_num_items()
+# 10
 
 print json_file.get_ids_split(target_split='test')
+# [6, 80, 147, 212, 261, 373, 385, 431, 460, 476]
 
 print json_file.get_item_from_img_id(target_img_id=476)
+# {u'asin': u'B00EC7KR14', u'url': u'http://ecx.images-amazon.com/images/I/41FQgL4OxAL.jpg', u'text': u'vogue ...
 
 words = json_file.get_word_list_of_img_id(476)
 print "\n", words

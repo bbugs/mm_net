@@ -31,6 +31,8 @@ dc['word2vec_vectors'] = root_path + 'data/word_vects/glove/vocab_vecs.txt'
 # External vocabulary
 dc['external_vocab'] = root_path + 'data/fashion53k/external_vocab/zappos.vocab.txt'
 
-# target vocab
-dc['target_vocab'] = 'fname'  # TODO: create this
+# target vocab (used in alignment_data.py on make_y_true_img2txt)
+dc['train_vocab'] = 'fname'  # TODO: create this (with JsonFile.get_vocab_words+from_json(min_word_freq=5).
+dc['val_vocab'] = 'fname'  # do we need this ??
+dc['test_vocab'] = 'fname'  # do we need this ??
 

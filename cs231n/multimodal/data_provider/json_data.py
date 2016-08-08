@@ -53,7 +53,7 @@ class JsonFile(object):
         return a list of unique words that correspond to item
         """
         txt = item['text']
-        word_list = list(set([w.replace('\n', "") for w in txt.split(" ")]))
+        word_list = list(set([w.replace('\n', "") for w in txt.split(" ") if len(w) > 0])) # avoid empty string
         return word_list
 
     # def get_text_of_img_ids(self, img_ids):
@@ -135,7 +135,7 @@ class JsonFile(object):
         """
         all_text = self.get_all_txt_from_json()
         vocab_with_counts = self.get_vocabulary_words_with_counts(all_text, min_word_freq)
-        vocab_words = [w[0] for w in vocab_with_counts]
+        vocab_words = [w[0] for w in vocab_with_counts if len(w[0]) > 0]  # avoid empty string
         return vocab_words
 
     def get_num_vocab_words_from_json(self, min_word_freq=5):

@@ -1,5 +1,6 @@
 import numpy as np
 
+
 class CnnData(object):
 
     def __init__(self, data_config):

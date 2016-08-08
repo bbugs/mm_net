@@ -1,4 +1,7 @@
 import numpy as np
+from cs231n.multimodal.data_provider.json_data import JsonFile
+from cs231n.multimodal.data_provider.vocab_data import Vocabulary
+
 
 class AlignmentData(object):
 
