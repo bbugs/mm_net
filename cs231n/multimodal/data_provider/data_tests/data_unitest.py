@@ -1,11 +1,9 @@
 
-from cs231n.multimodal.data_provider import data
+from cs231n.multimodal.data_provider import word2vec_data
 
 d = {}
 
 d['root_path'] = root_path = '../../../../DeepFashion/'  # assume module is run from assignment2
-
-d['num_regions_per_img'] = 4 + 1
 
 # Image CNN (Full Image + Regions) features
 d['num_regions_per_img'] = 4 + 1
@@ -15,7 +13,7 @@ d['cnn_regions_path_val'] = d['cnn_regions_path'] + '/cnn_fc7_val.txt'
 d['cnn_regions_path_test'] = d['cnn_regions_path'] + '/cnn_fc7_test.txt'
 
 # Image CNN (Full Image only) features
-# TODO: Get cnn features for full images only
+# TODO: Make cnn features for full images only
 d['cnn_full_img_path'] = root_path + '/data/fashion53k/full_img/per_split/'
 d['cnn_full_img_path_train'] = d['cnn_full_img_path'] + '/cnn_fc7_train.txt'
 d['cnn_full_img_path_val'] = d['cnn_full_img_path'] + '/cnn_fc7_val.txt'
@@ -34,8 +32,11 @@ d['word2vec_vectors'] = root_path + 'data/word_vects/glove/vocab_vecs.txt'
 # External vocabulary
 d['external_vocab'] = root_path + 'data/fashion53k/external_vocab/zappos.vocab.txt'
 
+# target vocab
+d['target_vocab'] = 'fname'  # TODO: create this
 
-dd = data.Word2VecData(d)
+
+dd = word2vec_data.Word2VecData(d)
 # dd.set_word2vec_vocab()
 # print dd.get_vocab(vocab_name='word2vec')
 
