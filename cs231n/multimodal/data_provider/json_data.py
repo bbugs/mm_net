@@ -18,7 +18,7 @@ class JsonFile(object):
     def get_num_items(self):
         return len(self.dataset_items)
 
-    def get_ids_split(self, target_split='train'):
+    def get_ids_split(self, target_split):
         ids = []
         for item in self.dataset_items:
             imgid = item['imgid']
@@ -26,6 +26,19 @@ class JsonFile(object):
             if split == target_split:
                 ids.append(imgid)
         return ids
+
+    def get_index_from_img_id(self, target_img_id):
+        """
+        return the position (index) in the json file of target_img_id
+        """
+        index = None
+        i = 0
+        for item in self.dataset_items:
+            current_imgid = item['imgid']
+            if current_imgid == target_img_id:
+                index = i
+            i += 1
+        return index
 
     def get_item_from_img_id(self, target_img_id):
         item = None

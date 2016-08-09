@@ -56,6 +56,11 @@ class Word2VecData(object):
 
         return
 
+    def set_word2vec_dim(self):
+        # read the first line of word2vec vector file and check the dimenision
+        vec = np.fromstring(linecache.getline(self.d['word2vec_vectors'], 1), sep=" ")
+        self.word2vec_dim = vec.shape[0]
+
     def set_external_word_vectors(self):
 
         if self.word2vec_vectors.size == 0:
@@ -109,9 +114,15 @@ class Word2VecData(object):
         return self.external_word_vectors
 
     def get_word_vectors_of_word_list(self, word_list):
+        # if self.word2vec_dim == 0:
+        #     print "loading word vectors ..."
+        #     self.set_word_vectors()
+
+        if self.word2vec_vocab is None:
+            self.set_word2vec_vocab()
+
         if self.word2vec_dim == 0:
-            print "loading word vectors ..."
-            self.set_word_vectors()
+            self.set_word2vec_dim()
 
         word2id, id2word = self.word2vec_vocab.get_vocab_dicts()
 
@@ -128,8 +139,9 @@ class Word2VecData(object):
                 continue
 
             w_id = word2id[word]
-            X_txt[i, :] = self.word2vec_vectors[w_id, :]
-            # X_txt[i, :] = np.genfromtxt(linecache.getline(self.d['word2vec_vectors'], w_id))
+            # X_txt[i, :] = self.word2vec_vectors[w_id, :]
+            # Note that linecache line numbers start at 1.
+            X_txt[i, :] = np.fromstring(linecache.getline(self.d['word2vec_vectors'], w_id + 1), sep=" ")
             i += 1
 
         return X_txt

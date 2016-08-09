@@ -24,10 +24,11 @@ class AlignmentData(object):
     def make_region2pair_id(img_ids, num_regions_per_img):
         region2pair_id = np.zeros((len(img_ids) * num_regions_per_img, ))
 
-        i = 0
-        for img_id in img_ids:
-            region2pair_id[i: i + num_regions_per_img] = i
-            i += num_regions_per_img
+        region_index = 0
+        n = len(img_ids)
+        for i in range(n):
+            region2pair_id[region_index: region_index + num_regions_per_img] = i
+            region_index += num_regions_per_img
 
         return region2pair_id
 
@@ -35,7 +36,7 @@ class AlignmentData(object):
         word2pair_id = np.array([])  # empty array
 
         counter = 0
-        for img_id in img_ids:
+        for img_id in img_ids:  # TODO: handle what happens if ifm_id is not in the split
             unique_word_list = self.json_file.get_word_list_of_img_id(img_id)
 
             n_words = len(unique_word_list)
@@ -148,47 +149,66 @@ class AlignmentData(object):
 
         return
 
-    def make_y_true_img2txt_v0(self, num_regions_per_img, min_word_freq, target_split='test'):
+    def get_img_id2_region_index(self, num_regions):
         """
-        Queries are the images from self.split
-        targets are the words from
-
-        y is y_true_all_vocab for img2txt
-
-        assume a fixed num_regions_per_img
-
-        Return:
-            - y_true_img2txt: np array of size (n_regions_per_img * n_img_in_split, |target_vocab|)
-
+        To index the cnn data
         """
-        # load target json file if different from self.split
-        if target_split != self.split:
-            # we need to load a new json
-            if target_split == 'train':
-                target_json_file = JsonFile(self.d['json_path_train'])
-            elif target_split == 'val':
-                target_json_file = JsonFile(self.d['json_path_val'])
-            elif target_split == 'test':
-                target_json_file = JsonFile(self.d['json_path_test'])
-            else:
-                raise ValueError("train, val and test supported")
-        else:
-            target_json_file = self.json_file
 
-        # get vocabulary word from target split
-        target_vocab = target_json_file.get_vocab_words_from_json(min_word_freq=min_word_freq)
+        imgid2region_index = {}
 
-        # get the number of query images (these are images in self.split)
-        n_imgs_in_split = self.json_file.get_num_items()
-        n_regions = n_imgs_in_split * num_regions_per_img
-
-        y_true_img2txt = -np.ones((n_regions, len(target_vocab)))
+        img_ids = self.json_file.get_ids_split(target_split=self.split)
 
         region_index = 0
-        for item in self.json_file.dataset['items']:
-            # get the text of the item
-            word_list = self.json_file.get_word_list_from_item(item)
+        for img_id in img_ids:
+            imgid2region_index[img_id] = []
+            for i in range(num_regions):
+                imgid2region_index[img_id].append(region_index)
+                region_index += 1
+        return imgid2region_index
 
 
-        return
+
+    # def make_y_true_img2txt_v0(self, num_regions_per_img, min_word_freq, target_split='test'):
+    #     """
+    #     Queries are the images from self.split
+    #     targets are the words from
+    #
+    #     y is y_true_all_vocab for img2txt
+    #
+    #     assume a fixed num_regions_per_img
+    #
+    #     Return:
+    #         - y_true_img2txt: np array of size (n_regions_per_img * n_img_in_split, |target_vocab|)
+    #
+    #     """
+    #     # load target json file if different from self.split
+    #     if target_split != self.split:
+    #         # we need to load a new json
+    #         if target_split == 'train':
+    #             target_json_file = JsonFile(self.d['json_path_train'])
+    #         elif target_split == 'val':
+    #             target_json_file = JsonFile(self.d['json_path_val'])
+    #         elif target_split == 'test':
+    #             target_json_file = JsonFile(self.d['json_path_test'])
+    #         else:
+    #             raise ValueError("train, val and test supported")
+    #     else:
+    #         target_json_file = self.json_file
+    #
+    #     # get vocabulary word from target split
+    #     target_vocab = target_json_file.get_vocab_words_from_json(min_word_freq=min_word_freq)
+    #
+    #     # get the number of query images (these are images in self.split)
+    #     n_imgs_in_split = self.json_file.get_num_items()
+    #     n_regions = n_imgs_in_split * num_regions_per_img
+    #
+    #     y_true_img2txt = -np.ones((n_regions, len(target_vocab)))
+    #
+    #     region_index = 0
+    #     for item in self.json_file.dataset['items']:
+    #         # get the text of the item
+    #         word_list = self.json_file.get_word_list_from_item(item)
+    #
+    #
+    #     return
 
