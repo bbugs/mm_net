@@ -11,7 +11,7 @@ print json_file.get_num_items()
 # 10
 
 print "\nids from split"
-print json_file.get_ids_split(target_split='test')
+print json_file.get_img_ids()
 # [6, 80, 147, 212, 261, 373, 385, 431, 460, 476]
 
 print "\nindex of img id"

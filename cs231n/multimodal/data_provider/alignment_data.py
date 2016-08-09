@@ -88,7 +88,7 @@ class AlignmentData(object):
 
         n_imgs_in_split = self.json_file.get_num_items()
 
-        img_ids = self.json_file.get_ids_split(target_split=self.split)
+        img_ids = self.json_file.get_img_ids()
 
         y_true_txt2img = -np.ones((len(external_vocab), n_imgs_in_split * num_regions_per_img), dtype=int)
 
@@ -156,7 +156,7 @@ class AlignmentData(object):
 
         imgid2region_index = {}
 
-        img_ids = self.json_file.get_ids_split(target_split=self.split)
+        img_ids = self.json_file.get_img_ids()
 
         region_index = 0
         for img_id in img_ids:

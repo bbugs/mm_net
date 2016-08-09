@@ -10,6 +10,8 @@ class JsonFile(object):
         with open(json_fname, 'r') as f:
             self.dataset = json.load(f)
             self.dataset_items = self.dataset['items']
+            self.img_ids = []
+            self.img_indices = {}
             if num_items > 0:  # get the first num_items if needed
                 self.dataset_items = self.dataset['items'][0: num_items]
 
@@ -18,36 +20,56 @@ class JsonFile(object):
     def get_num_items(self):
         return len(self.dataset_items)
 
-    def get_ids_split(self, target_split):
-        ids = []
+    def set_img_ids(self):
         for item in self.dataset_items:
             imgid = item['imgid']
-            split = item['split']
-            if split == target_split:
-                ids.append(imgid)
-        return ids
+            self.img_ids.append(imgid)
+
+    def get_img_ids(self):
+        if len(self.img_ids) == 0:
+            self.set_img_ids()
+        return self.img_ids
+
+    def set_img_indices(self):
+        # img_indices[img_id] = index
+        index = 0
+        for item in self.dataset_items:
+            imgid = item['imgid']
+            self.img_indices[imgid] = index
+            index += 1
+
+    # def get_ids_split(self, target_split):
+    #     ids = []
+    #     for item in self.dataset_items:
+    #         imgid = item['imgid']
+    #         split = item['split']
+    #         if split == target_split:
+    #             ids.append(imgid)
+    #     return ids
 
     def get_index_from_img_id(self, target_img_id):
         """
         return the position (index) in the json file of target_img_id
         """
-        index = None
-        i = 0
-        for item in self.dataset_items:
-            current_imgid = item['imgid']
-            if current_imgid == target_img_id:
-                index = i
-            i += 1
-        return index
+        # make sure img_ids have been set
+        if len(self.img_ids) == 0:
+            self.set_img_ids()
+
+        # Check if target_img_id is in the json file. Otherwise return error
+        if target_img_id not in self.img_ids:
+            raise ValueError("target_img_id not in json file", target_img_id)
+
+        # make sure img_indices have been set
+        if len(self.img_indices) == 0:
+            self.set_img_indices()
+
+        return self.img_indices[target_img_id]
 
     def get_item_from_img_id(self, target_img_id):
-        item = None
-        for current_item in self.dataset_items:
-            imgid = current_item['imgid']
-            if imgid == target_img_id:
-                item = current_item
-                break  # found the right item
-        return item
+
+        index = self.get_index_from_img_id(target_img_id)
+
+        return self.dataset_items[index]
 
     def get_word_list_of_img_id(self, img_id):
         """
@@ -55,8 +77,7 @@ class JsonFile(object):
         """
         word_list = []
         item = self.get_item_from_img_id(img_id)
-        if item is None:
-            return word_list
+
         word_list = self.get_word_list_from_item(item)
         return word_list
 
@@ -66,7 +87,7 @@ class JsonFile(object):
         return a list of unique words that correspond to item
         """
         txt = item['text']
-        word_list = list(set([w.replace('\n', "") for w in txt.split(" ") if len(w) > 0])) # avoid empty string
+        word_list = list(set([w.replace('\n', "") for w in txt.split(" ") if len(w) > 0]))  # avoid empty string
         return word_list
 
     # def get_text_of_img_ids(self, img_ids):
