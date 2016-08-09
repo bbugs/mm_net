@@ -17,6 +17,8 @@ print json_file.get_img_ids()
 print "\nindex of img id"
 print json_file.get_index_from_img_id(476)  # 9
 
+# print json_file.get_index_from_img_id(1)  # returns error cause img_id 1 is not in the test split
+
 print "\nitem of img id"
 print json_file.get_item_from_img_id(target_img_id=476)
 # {u'asin': u'B00EC7KR14', u'url': u'http://ecx.images-amazon.com/images/I/41FQgL4OxAL.jpg', u'text': u'vogue ...
