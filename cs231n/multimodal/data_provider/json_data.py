@@ -75,7 +75,6 @@ class JsonFile(object):
         """
         return a list of unique words that correspond to the img_id
         """
-        word_list = []
         item = self.get_item_from_img_id(img_id)
 
         word_list = self.get_word_list_from_item(item)

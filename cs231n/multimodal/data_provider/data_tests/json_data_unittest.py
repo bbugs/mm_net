@@ -36,7 +36,7 @@ print "\nnum vocab words"
 print json_file.get_num_vocab_words_from_json(min_word_freq=5)
 
 json_file = JsonFile(d['json_path_train'], num_items=-1)
-print "\num vocab words for the split"
+print "\nnum vocab words for the split"
 print json_file.get_num_vocab_words_from_json(min_word_freq=5)
 
 

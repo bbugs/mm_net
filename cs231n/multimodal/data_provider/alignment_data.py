@@ -22,7 +22,7 @@ class AlignmentData(object):
 
     @staticmethod
     def make_region2pair_id(img_ids, num_regions_per_img):
-        region2pair_id = np.zeros((len(img_ids) * num_regions_per_img, ))
+        region2pair_id = np.zeros((len(img_ids) * num_regions_per_img, ), dtype=int)
 
         region_index = 0
         n = len(img_ids)
@@ -32,7 +32,7 @@ class AlignmentData(object):
 
         return region2pair_id
 
-    def make_word2pair_id(self, img_ids):
+    def make_word2pair_id(self, img_ids, verbose=False):
         word2pair_id = np.array([])  # empty array
 
         counter = 0
@@ -40,6 +40,9 @@ class AlignmentData(object):
             unique_word_list = self.json_file.get_word_list_of_img_id(img_id)
 
             n_words = len(unique_word_list)
+            if verbose:
+                print "n words", n_words
+                print unique_word_list
             pair_ids = counter * np.ones(n_words, dtype=int)
 
             word2pair_id = np.hstack((word2pair_id, pair_ids))
@@ -59,7 +62,7 @@ class AlignmentData(object):
 
         n_regions = region2pair_id.shape[0]
         n_words = word2pair_id.shape[0]
-        y = -np.ones((n_regions, n_words))
+        y = -np.ones((n_regions, n_words), dtype=int)
 
         for i in range(N + 1):
             MEQ = np.outer(region2pair_id == i, word2pair_id == i)
@@ -129,14 +132,14 @@ class AlignmentData(object):
             ev = Vocabulary(self.d['external_vocab'])
             ext_vocab = set(ev.get_vocab())
 
-        # get the number of query images (these are images in self.split)
+        # get the number of query images (these are images in the json file)
         n_imgs_in_split = self.json_file.get_num_items()
         n_regions = n_imgs_in_split * num_regions_per_img
 
-        y_true_img2txt = -np.ones((n_regions, len(target_vocab)))
+        y_true_img2txt = -np.ones((n_regions, len(target_vocab)), dtype=int)
 
         region_index = 0
-        for item in self.json_file.dataset['items']:
+        for item in self.json_file.dataset_items:
             # get the text of the item
             word_list = self.json_file.get_word_list_from_item(item)
             for word in word_list:
