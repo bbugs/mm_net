@@ -5,7 +5,7 @@ import numpy as np
 
 d = data_config.dc
 
-align_data = AlignmentData(d, split='test', num_items=-1)
+align_data = AlignmentData(d, split='test', num_items=10)
 
 
 ###################################################
@@ -58,6 +58,8 @@ def test_pair_id2y():
 
     y = align_data.pair_id2y(region2pair_id, word2pair_id)
 
+    # TODO: make assertions
+
     print y
 
 
@@ -69,6 +71,8 @@ def test_make_y_true_txt2img():
 
     print y_true_txt2img
     print y_true_txt2img.shape
+
+    # TODO: make assertions
 
     return
 
@@ -87,14 +91,16 @@ def test_get_img_id2region_index():
 
     print img_id2region_index[6]  # first item
     print img_id2region_index[80]  # second item
-    print img_id2region_index[53544]  # last item
+    print img_id2region_index[476]  # last item when there are 10 items in test split
+
+    # TODO: make assertions
 
 
 def main():
-    # test_make_region2pair_id()
-    # test_make_word2pair_id()
-    # test_pair_id2y()
-    # test_make_y_true_txt2img()
+    test_make_region2pair_id()
+    test_make_word2pair_id()
+    test_pair_id2y()
+    test_make_y_true_txt2img()
     test_get_img_id2region_index()
 
 if __name__ == "__main__":
