@@ -142,6 +142,7 @@ class Word2VecData(object):
             # X_txt[i, :] = self.word2vec_vectors[w_id, :]
             # Note that linecache line numbers start at 1.
             X_txt[i, :] = np.fromstring(linecache.getline(self.d['word2vec_vectors'], w_id + 1), sep=" ")
+            #TODO: test that linecache reads in the right word vecto
             i += 1
 
         return X_txt

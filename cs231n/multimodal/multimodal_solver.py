@@ -3,9 +3,6 @@ import numpy as np
 from cs231n import optim
 from cs231n.multimodal.evaluation import metrics
 
-# TODO: Sus, study the Solver code and see how much it needs to be
-
-
 class MultiModalSolver(object):
     """
 
