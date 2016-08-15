@@ -32,7 +32,8 @@ class CnnData(object):
         return self.cnn
 
     def get_cnn_from_index(self, index):
-        np.fromstring(linecache.getline(self.fname, index + 1), sep=",")
+        # TODO: test this method
+        return np.fromstring(linecache.getline(self.fname, index + 1), sep=",")
 
 
 
