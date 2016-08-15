@@ -34,7 +34,7 @@ dc['word2vec_vectors'] = root_path + 'data/word_vects/glove/vocab_vecs.txt'
 dc['external_vocab'] = root_path + 'data/fashion53k/external_vocab/zappos.vocab.txt'
 
 # target vocab (used in alignment_data.py on make_y_true_img2txt)
-#TODO: see where does min_freq applies
+#TODO: see where does min_freq applies (perhaps make the clean json alread remove words with less than min_freq)
 dc['train_vocab'] = root_path + '/fashion53k/vocab_per_split/vocab_train_min_freq_5.txt'  #
 dc['val_vocab'] = root_path + '/fashion53k/vocab_per_split/vocab_val_min_freq_5.txt'  # do we need this ??
 dc['test_vocab'] = root_path + '/fashion53k/vocab_per_split/vocab_test_min_freq_5.txt'  # do we need this ??
