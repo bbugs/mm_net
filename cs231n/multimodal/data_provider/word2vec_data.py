@@ -9,6 +9,9 @@ from cs231n.multimodal.data_provider.vocab_data import Vocabulary
 
 class Word2VecData(object):
 
+    # TODO: eliminate dependency to data_config. Inputs: word2vec_vocab_fname,
+    # word2vec_vectors_fname. Most useful method is  get_word_vectors_of_word_list
+
     def __init__(self, data_config):
         self.d = data_config
 
