@@ -4,6 +4,19 @@ import numpy as np
 import os
 
 
+def check_img_ids(json_fname, imgid2region_indices):
+    """(str, dict) ->
+
+    imgid2region_indices is a dict whose
+
+    """
+    json_file = JsonFile(json_fname, num_items=-1)
+
+    assert sorted(imgid2region_indices.keys()) == json_file.get_img_ids()
+
+    return
+
+
 class JsonFile(object):
 
     def __init__(self, json_fname, num_items=-1):
@@ -11,7 +24,8 @@ class JsonFile(object):
             self.dataset = json.load(f)
             self.dataset_items = self.dataset['items']
             self.img_ids = []
-            self.img_indices = {}
+            self.img_id2json_index = {}  # dict[img_id] = json_index
+            self.img_id2cnn_region_index = {}  # dict[img_id]= list of region indices of cnn file
             if num_items > 0:  # get the first num_items if needed
                 self.dataset_items = self.dataset['items'][0: num_items]
 
@@ -30,12 +44,12 @@ class JsonFile(object):
             self.set_img_ids()
         return self.img_ids
 
-    def set_img_indices(self):
+    def _set_img_id2json_index(self):
         # img_indices[img_id] = index
         index = 0
         for item in self.dataset_items:
             imgid = item['imgid']
-            self.img_indices[imgid] = index
+            self.img_id2json_index[imgid] = index
             index += 1
 
     # def get_ids_split(self, target_split):
@@ -47,7 +61,41 @@ class JsonFile(object):
     #             ids.append(imgid)
     #     return ids
 
-    def get_index_from_img_id(self, target_img_id):
+    # def _set_img_id2cnn_region_index(self, num_regions_per_img):
+    #     """
+    #     num_regions_per_img:  either an int (same number of regions for each image) or
+    #                           a dict[img_id] = num_regions_in_img_id
+    #     """
+    #
+    #     if len(self.img_ids) == 0:
+    #         self.set_img_ids()
+    #
+    #     region_index = 0
+    #     for img_id in self.img_ids:
+    #         self.img_id2cnn_region_index[img_id] = []
+    #         if isinstance(num_regions_per_img, int):
+    #             n_regions_in_img_id = num_regions_per_img
+    #         elif isinstance(num_regions_per_img, dict):
+    #             n_regions_in_img_id = num_regions_per_img[img_id]
+    #         else:
+    #             raise ValueError("num_regions_per_img must be either an int or a dict")
+    #
+    #         for i in range(n_regions_in_img_id):
+    #             self.img_id2cnn_region_index[img_id].append(region_index)
+    #             region_index += 1
+    #
+    # def get_cnn_region_indeces_from_img_id(self, target_img_id, num_regions_per_img):
+    #
+    #     if len(self.img_id2cnn_region_index) == 0:
+    #         self._set_img_id2cnn_region_index(num_regions_per_img)
+    #
+    #     # Check if target_img_id is in the json file. Otherwise return error
+    #     if target_img_id not in self.img_ids:
+    #         raise ValueError("target_img_id not in json file", target_img_id)
+    #
+    #     return self.img_id2cnn_region_index[target_img_id]
+
+    def get_json_index_from_img_id(self, target_img_id):
         """
         return the position (index) in the json file of target_img_id
         """
@@ -59,25 +107,27 @@ class JsonFile(object):
         if target_img_id not in self.img_ids:
             raise ValueError("target_img_id not in json file", target_img_id)
 
-        # make sure img_indices have been set
-        if len(self.img_indices) == 0:
-            self.set_img_indices()
+        # make sure json indices have been set
+        if len(self.img_id2json_index) == 0:
+            self._set_img_id2json_index()
 
-        return self.img_indices[target_img_id]
+        return self.img_id2json_index[target_img_id]
 
-    def get_random_img_ids(self, num_items):
+    def get_random_img_ids(self, num_imgs, seed=None):
         # make sure img_ids have been set
         if len(self.img_ids) == 0:
             self.set_img_ids()
 
-        if num_items > len(self.img_ids):
-            raise ValueError("reduce number of items, json file has {} items".format(len(self.img_ids)))
+        if num_imgs > len(self.img_ids):
+            raise ValueError("reduce number of imgs, json file has {} items".format(len(self.img_ids)))
 
-        return np.random.choice(self.img_ids, num_items, replace=False)
+        if seed:
+            np.random.seed(seed)
+        return np.random.choice(self.img_ids, num_imgs, replace=False)
 
     def get_item_from_img_id(self, target_img_id):
 
-        index = self.get_index_from_img_id(target_img_id)
+        index = self.get_json_index_from_img_id(target_img_id)
 
         return self.dataset_items[index]
 

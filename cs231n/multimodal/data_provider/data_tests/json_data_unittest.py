@@ -14,11 +14,27 @@ print "\nids from split"
 print json_file.get_img_ids()
 # [6, 80, 147, 212, 261, 373, 385, 431, 460, 476]
 
+# cnn_region_ind = json_file.get_cnn_region_indeces_from_img_id(target_img_id=80, num_regions_per_img=4)
+# assert cnn_region_ind == [4, 5, 6, 7]
+
+# cnn_region_ind = json_file.get_cnn_region_indeces_from_img_id(target_img_id=1, num_regions_per_img=4)  # error returned since target_img_id not in json file
+
+# num_regions_per_img = {}
+# num_regions_per_img[80] = 2
+# num_regions_per_img[373] = 6
+#
+# cnn_region_ind = json_file.get_cnn_region_indeces_from_img_id(target_img_id=80,
+#                                                               num_regions_per_img=num_regions_per_img)
+
+# print cnn_region_ind
+# raw_input("key to cont.")
+
+
 print "\nindex of img id"
-print json_file.get_index_from_img_id(target_img_id=476)  # 9
+print json_file.get_json_index_from_img_id(target_img_id=476)  # 9
 
 print "\nrandom img ids"
-print json_file.get_random_img_ids(num_items=4)
+print json_file.get_random_img_ids(num_imgs=4)
 # [  6 385 373  80]  list of random img ids in the json file
 
 # print json_file.get_index_from_img_id(1)  # returns error cause img_id 1 is not in the test split
