@@ -65,6 +65,16 @@ class JsonFile(object):
 
         return self.img_indices[target_img_id]
 
+    def get_random_img_ids(self, num_items):
+        # make sure img_ids have been set
+        if len(self.img_ids) == 0:
+            self.set_img_ids()
+
+        if num_items > len(self.img_ids):
+            raise ValueError("reduce number of items, json file has {} items".format(len(self.img_ids)))
+
+        return np.random.choice(self.img_ids, num_items, replace=False)
+
     def get_item_from_img_id(self, target_img_id):
 
         index = self.get_index_from_img_id(target_img_id)

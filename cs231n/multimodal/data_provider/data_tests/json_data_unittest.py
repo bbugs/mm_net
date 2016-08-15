@@ -15,7 +15,11 @@ print json_file.get_img_ids()
 # [6, 80, 147, 212, 261, 373, 385, 431, 460, 476]
 
 print "\nindex of img id"
-print json_file.get_index_from_img_id(476)  # 9
+print json_file.get_index_from_img_id(target_img_id=476)  # 9
+
+print "\nrandom img ids"
+print json_file.get_random_img_ids(num_items=4)
+# [  6 385 373  80]  list of random img ids in the json file
 
 # print json_file.get_index_from_img_id(1)  # returns error cause img_id 1 is not in the test split
 
