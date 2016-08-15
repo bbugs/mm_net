@@ -1,25 +1,28 @@
 import numpy as np
 import linecache
+import json
+
+
+def check_num_regions(cnn_fname, imgid2region_indices):
+    """(str, dict) ->
+
+    """
+    cnn_data = CnnData(cnn_fname)
+    num_regions = 0
+    for img_id in imgid2region_indices:
+        num_regions += len(imgid2region_indices[img_id])
+
+    assert num_regions == cnn_data.get_cnn().shape[0]
+    return
 
 
 class CnnData(object):
 
-    def __init__(self, fname):
+    def __init__(self, cnn_fname):
 
-        self.fname = fname
+        self.fname = cnn_fname
         self.cnn = np.array([])
-
-        # self.d = data_config
-        #
-        # # full image cnn
-        # self.cnn_full_img_train = np.array([])
-        # self.cnn_full_img_val = np.array([])
-        # self.cnn_full_img_test = np.array([])
-        #
-        # # full image + regions cnn
-        # self.cnn_region_train = np.array([])
-        # self.cnn_region_val = np.array([])
-        # self.cnn_region_test = np.array([])
+        self.cnn_dim = 0
 
         return
 
@@ -35,8 +38,15 @@ class CnnData(object):
         # TODO: test this method
         return np.fromstring(linecache.getline(self.fname, index + 1), sep=",")
 
+    def set_cnn_dim(self):
+        # read the first line of cnn file and check the dimension
+        vec = np.fromstring(linecache.getline(self.fname, 1), sep=",")
+        self.cnn_dim = vec.shape[0]
 
-
+    def get_cnn_dim(self):
+        if self.cnn_dim == 0:
+            self.set_cnn_dim()
+        return self.cnn_dim
 
 
     # def set_cnn_full_img_split(self, split='test'):

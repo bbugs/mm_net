@@ -5,6 +5,14 @@ from cs231n.multimodal.data_provider.vocab_data import Vocabulary
 
 class AlignmentData(object):
 
+    def __init__(self, json_file, cnn_file, num_regions_per_img):
+        self.img_id2cnn_region_index = {}  # dict[img_id]= list of region indices of cnn file
+
+        # self.cnn_region_index_from_img_id
+
+
+class AlignmentDataV0(object):
+
     def __init__(self, data_config, split, num_items):
         self.d = data_config
         self.split = split
@@ -156,7 +164,7 @@ class AlignmentData(object):
     #
     #     return
 
-    def get_img_id2region_index(self, num_regions):
+    def get_img_id2cnn_region_index(self, num_regions):
         """
         To index the cnn data
 

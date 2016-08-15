@@ -28,9 +28,14 @@ class Word2VecData(object):
         #     self.word2vec_vocab = [w.replace('\n', '') for w in f.readlines()]
 
     def set_word2vec_dim(self):
-        # read the first line of word2vec vector file and check the dimenision
+        # read the first line of word2vec vector file and check the dimension
         vec = np.fromstring(linecache.getline(self.w2v_vectors_fname, 1), sep=" ")
         self.word2vec_dim = vec.shape[0]
+
+    def get_word2vec_dim(self):
+        if self.word2vec_dim == 0:
+            self.set_word2vec_dim()
+        return self.word2vec_dim
 
     # def set_external_vocab(self):
     #     self.external_vocab = Vocabulary(self.d['external_vocab'])

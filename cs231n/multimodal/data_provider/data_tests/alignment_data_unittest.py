@@ -1,11 +1,11 @@
 
-from cs231n.multimodal.data_provider.alignment_data import AlignmentData
+from cs231n.multimodal.data_provider.alignment_data import AlignmentDataV0
 from cs231n.multimodal.data_provider.data_tests import data_config
 import numpy as np
 
 d = data_config.dc
 
-align_data = AlignmentData(d, split='test', num_items=10)
+align_data = AlignmentDataV0(d, split='test', num_items=10)
 
 
 ###################################################
@@ -87,7 +87,7 @@ def test_make_y_true_txt2img():
 ###################################################
 
 def test_get_img_id2region_index():
-    img_id2region_index = align_data.get_img_id2region_index(num_regions=5)
+    img_id2region_index = align_data.get_img_id2cnn_region_index(num_regions=5)
 
     print img_id2region_index[6]  # first item
     print img_id2region_index[80]  # second item
