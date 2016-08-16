@@ -1,6 +1,6 @@
 import numpy as np
 from cs231n.multimodal.data_provider.json_data import JsonFile
-
+import itertools
 
 def mk_toy_img_id2region_indices(json_fname, num_regions_per_img, subset_num_items=-1):
 
@@ -18,6 +18,13 @@ def mk_toy_img_id2region_indices(json_fname, num_regions_per_img, subset_num_ite
             region_index += 1
 
     return img_id2region_indices
+
+
+def get_num_lines_from_file(fname):
+    counts = itertools.count()
+    with open(fname) as f:
+        for _ in f: counts.next()
+    return counts.next()
 
 
 def y2pair_id(y, N):
@@ -96,3 +103,6 @@ if __name__ == '__main__':
     correct[147] = [10, 11, 12, 13, 14]
     print imgid2regionind  # {80: [5, 6, 7, 8, 9], 147: [10, 11, 12, 13, 14], 6: [0, 1, 2, 3, 4]}
     # assert imgid2regionind == correct
+
+    fname = data_config.dc['cnn_regions_path_test']
+    print get_num_lines_from_file(fname)

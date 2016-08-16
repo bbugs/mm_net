@@ -1,18 +1,26 @@
 import numpy as np
 import linecache
 import json
+from cs231n.multimodal import multimodal_utils
 
 
-def check_num_regions(cnn_fname, imgid2region_indices):
+def check_num_regions(cnn_fname, imgid2region_indices, verbose=False):
     """(str, dict) ->
+    compare the number of regions from cnn_fname and the number
+    of regions from imgid2region_indices
 
     """
-    cnn_data = CnnData(cnn_fname)
     num_regions = 0
     for img_id in imgid2region_indices:
         num_regions += len(imgid2region_indices[img_id])
 
-    assert num_regions == cnn_data.get_cnn().shape[0]
+    num_regions_cnn_array = multimodal_utils.get_num_lines_from_file(cnn_fname)
+
+    if verbose:
+        print "num regions from imgid2region_indices: ", num_regions
+        print "num regions from cnn array: ", num_regions_cnn_array
+
+    assert num_regions == num_regions_cnn_array
     return
 
 
@@ -35,7 +43,6 @@ class CnnData(object):
         return self.cnn
 
     def get_cnn_from_index(self, index):
-        # TODO: test this method
         return np.fromstring(linecache.getline(self.fname, index + 1), sep=",")
 
     def set_cnn_dim(self):
