@@ -88,13 +88,16 @@ class BatchData(ExperimentData):
         # Randomly select img_ids from json file
         img_ids = self.json_file.get_random_img_ids(batch_size, seed=seed)
 
+        if verbose:
+            print "img_ids \n", img_ids
+
         region2pair_id = self.make_region2pair_id(img_ids)
         num_regions_in_bath = len(region2pair_id)
-        X_img = np.zeros(num_regions_in_bath, self.cnn_data.get_cnn_dim())
+        X_img = np.zeros((num_regions_in_bath, self.cnn_data.get_cnn_dim()))
 
         # Set word vectors for the batch X_txt and set self.word2pair_id
         words_in_batch = []
-        word2pair_id = np.array([])  # empty array
+        word2pair_id = np.array([], dtype=int)  # empty array
         counter = 0
         batch_region_index = 0
         for img_id in img_ids:
