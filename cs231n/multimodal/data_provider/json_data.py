@@ -146,7 +146,7 @@ class JsonFile(object):
         return a list of unique words that correspond to item
         """
         txt = item['text']
-        word_list = list(set([w.replace('\n', "") for w in txt.split(" ") if len(w) > 0]))  # avoid empty string
+        word_list = sorted(list(set([w.replace('\n', "") for w in txt.split(" ") if len(w) > 0])))  # avoid empty string
         return word_list
 
     # def get_text_of_img_ids(self, img_ids):
