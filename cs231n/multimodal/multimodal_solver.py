@@ -3,12 +3,13 @@ import numpy as np
 from cs231n import optim
 from cs231n.multimodal.evaluation import metrics
 
+
 class MultiModalSolver(object):
     """
 
     """
 
-    def __init__(self, model, data, **kwargs):
+    def __init__(self, model, batch_data, eval_data_train, eval_data_val, **kwargs):
         """
         Construct a new Solver instance.
 
@@ -38,23 +39,33 @@ class MultiModalSolver(object):
           training.
         """
         self.model = model
+        self.batch_data = batch_data
+        self.num_items_train = eval_data_train.X_img.shape[0]  # number of images in training set
+
+        self.X_img_train = eval_data_train.X_img
+        self.X_txt_train = eval_data_train.X_txt
+        self.y_true_img2txt_train = eval_data_train.y_true_img2txt
+
+        self.X_img_val = eval_data_val.X_img
+        self.X_txt_val = eval_data_val.X_txt
+        self.y_true_img2txt_val = eval_data_val.y_true_img2txt
 
         # Train data
-        self.X_img_train = data['X_img_train']
-        self.X_txt_train = data['X_txt_train']
-
-        self.region2pair_id_train = data['region2pair_id_train']
-        self.word2pair_id_train = data['word2pair_id_train']
-
-        # Validation data
-        self.X_img_val = data['X_img_val']
-        self.X_txt_val = data['X_txt_val']
-
-        self.region2pair_id_val = data['region2pair_id_val']
-        self.word2pair_id_val = data['word2pair_id_val']
-
-        # Data to evaluate f1 on training and validation set
-        self.
+        # self.X_img_train = data['X_img_train']
+        # self.X_txt_train = data['X_txt_train']
+        #
+        # self.region2pair_id_train = data['region2pair_id_train']
+        # self.word2pair_id_train = data['word2pair_id_train']
+        #
+        # # Validation data
+        # self.X_img_val = data['X_img_val']
+        # self.X_txt_val = data['X_txt_val']
+        #
+        # self.region2pair_id_val = data['region2pair_id_val']
+        # self.word2pair_id_val = data['word2pair_id_val']
+        #
+        # # Data to evaluate f1 on training and validation set
+        # self.
 
         # Unpack keyword arguments
         self.update_rule = kwargs.pop('update_rule', 'sgd')
@@ -104,13 +115,19 @@ class MultiModalSolver(object):
         be called manually.
         """
         # Make a minibatch of training data
-        num_train = self.X_train.shape[0]
-        batch_mask = np.random.choice(num_train, self.batch_size)
-        X_batch = self.X_train[batch_mask]
-        y_batch = self.y_train[batch_mask]
+
+        X_img_batch, X_txt_batch, region2pair_id, word2pair_id =\
+            self.batch_data.get_minibatch(batch_size=self.batch_size)
+
+        #
+        # num_train = self.X_train.shape[0]
+        # batch_mask = np.random.choice(num_train, self.batch_size)
+        # X_batch = self.X_train[batch_mask]
+        # y_batch = self.y_train[batch_mask]
 
         # Compute loss and gradient
-        loss, grads = self.model.loss(X_batch, y_batch)
+        # loss, grads = self.model.loss(X_batch, y_batch)
+        loss, grads = self.model.loss(X_img_batch, X_txt_batch, region2pair_id, word2pair_id)
         self.loss_history.append(loss)
 
         # Perform a parameter update
@@ -121,21 +138,21 @@ class MultiModalSolver(object):
             self.model.params[p] = next_w
             self.optim_configs[p] = next_config
 
-    def check_f1(self, X_img, X_txt, y_true):
-        """
+    # def check_f1(self, X_img, X_txt, y_true):
+    #     """
+    #
+    #     Check f1 measure (combines both precision and recall)
+    #
+    #     """
+    #     sim_region_word = self.model.loss(X_img, X_txt)
+    #     y_pred = np.ones(sim_region_word.shape)
+    #     y_pred[sim_region_word < 0] = -1  # when the sim scores are < 0, classification is negative
+    #
+    #     p, r, f1 = metrics.precision_recall_f1(y_pred, y_true, raw_scores=False)
+    #
+    #     return f1
 
-        Check f1 measure (combines both precision and recall)
-
-        """
-        sim_region_word = self.model.loss(X_img, X_txt)
-        y_pred = np.ones(sim_region_word.shape)
-        y_pred[sim_region_word < 0] = -1  # when the sim scores are < 0, classification is negative
-
-        p, r, f1 = metrics.precision_recall_f1(y_pred, y_true, raw_scores=False)
-
-        return f1
-
-    def check_f1_img2txt(self, X_img, X_txt_all_vocab, y_true_all_vocab):
+    def check_f1_img2txt(self, X_img_queries, X_txt_target, y_true_img2txt):
         """
 
         Inputs:
@@ -150,15 +167,15 @@ class MultiModalSolver(object):
         and thus measure how well the network can retrieve those visual words. But
         this function does not need to know, it just needs +1 or -1 for all region-word pairs
         """
-        sim_region_word = self.model.loss(X_img, X_txt_all_vocab)
+        sim_region_word = self.model.loss(X_img_queries, X_txt_target)
         y_pred = np.ones(sim_region_word.shape)
         y_pred[sim_region_word < 0] = -1  # when the sim scores are < 0, classification is negative
 
-        p, r, f1 = metrics.precision_recall_f1(y_pred, y_true_all_vocab, raw_scores=False)
+        p, r, f1 = metrics.precision_recall_f1(y_pred, y_true_img2txt, raw_scores=False)
 
         return f1
 
-    def check_f1_txt2img(self, X_img_target, X_txt_zappos_only, y_true_zappos_only):
+    def check_f1_txt2img(self, X_img_target, X_txt_queries, y_true_txt2img):
 
         """
         Inputs:
@@ -169,14 +186,13 @@ class MultiModalSolver(object):
         whether or not (+1,-1) the ith zappos word corresponds to the jth image.
 
         """
-        sim_word_region = self.model.loss(X_img_target, X_txt_zappos_only).T
+        sim_word_region = self.model.loss(X_img_target, X_txt_queries).T
         y_pred = np.ones(sim_word_region.shape)
         y_pred[sim_word_region < 0] = -1  # when the sim scores are < 0, classification is negative
 
-        p, r, f1 = metrics.precision_recall_f1(y_pred, y_true_zappos_only, raw_scores=False)
+        p, r, f1 = metrics.precision_recall_f1(y_pred, y_true_txt2img, raw_scores=False)
 
         return f1
-
 
 
     def check_accuracy(self, X, y, num_samples=None, batch_size=100):
@@ -223,8 +239,8 @@ class MultiModalSolver(object):
         """
         Run optimization to train the model.
         """
-        num_train = self.X_train.shape[0]
-        iterations_per_epoch = max(num_train / self.batch_size, 1)
+        # num_train = self.X_train.shape[0]
+        iterations_per_epoch = max(self.num_items_train / self.batch_size, 1)
         num_iterations = self.num_epochs * iterations_per_epoch
 
         for t in xrange(num_iterations):
@@ -248,9 +264,15 @@ class MultiModalSolver(object):
             first_it = (t == 0)
             last_it = (t == num_iterations + 1)
             if first_it or last_it or epoch_end:
-                train_acc = self.check_accuracy(self.X_train, self.y_train,
-                                                num_samples=1000)
-                val_acc = self.check_accuracy(self.X_val, self.y_val)
+
+                f1_img2txt_train = self.check_f1_img2txt(self.X_img_train, self.X_txt_train, self.y_true_img2txt_train)
+                f1_img2txt_val = self.check_f1_img2txt(self.X_img_val, self.X_txt_val, self.y_true_img2txt_val)
+
+
+
+                # train_acc = self.check_accuracy(self.X_train, self.y_train,
+                #                                 num_samples=1000)
+                # val_acc = self.check_accuracy(self.X_val, self.y_val)
                 self.train_f1_history.append(train_acc)
                 self.val_f1_history.append(val_acc)
 
