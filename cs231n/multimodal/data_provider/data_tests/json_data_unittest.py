@@ -1,6 +1,7 @@
 
 from cs231n.multimodal.data_provider.data_tests import data_config
-from cs231n.multimodal.data_provider.json_data import JsonFile
+from cs231n.multimodal.data_provider.json_data import JsonFile, check_img_ids
+from cs231n.multimodal import multimodal_utils
 
 d = data_config.dc
 
@@ -60,3 +61,8 @@ print "\nnum vocab words for the split"
 print json_file.get_num_vocab_words_from_json(min_word_freq=5)
 
 
+imgid2region_indices = multimodal_utils.mk_toy_img_id2region_indices(json_fname=d['json_path_test'],
+                                                                     num_regions_per_img=5,
+                                                                     subset_num_items=-1)
+
+check_img_ids(json_fname=d['json_path_test'], imgid2region_indices=imgid2region_indices)
