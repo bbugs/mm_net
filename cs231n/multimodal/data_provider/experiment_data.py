@@ -6,7 +6,6 @@ import numpy as np
 
 
 class ExperimentData(object):
-
     def __init__(self, json_fname, cnn_fname, img_id2cnn_region_indeces,
                  w2v_vocab_fname, w2v_vectors_fname, subset_num_items):
         """
@@ -30,7 +29,6 @@ class ExperimentData(object):
 
 
 class BatchData(ExperimentData):
-
     def __init__(self, json_fname, cnn_fname, img_id2cnn_region_indeces,
                  w2v_vocab_fname, w2v_vectors_fname, subset_num_items=-1):
 
@@ -125,7 +123,6 @@ class BatchData(ExperimentData):
 
 
 class EvaluationData(ExperimentData):
-
     def __init__(self, json_fname, cnn_fname, img_id2cnn_region_indeces,
                  w2v_vocab_fname, w2v_vectors_fname, external_vocab_fname, subset_num_items=-1):
 
@@ -168,12 +165,12 @@ class EvaluationData(ExperimentData):
             num_regions_in_split += len(self.img_id2cnn_region_indeces[img_id])
 
         self.y_true_txt2img = -np.ones((len(external_vocab), num_regions_in_split), dtype=int)
-        self.X_img = np.zeros(num_regions_in_split, self.cnn_data.get_cnn_dim())
+        self.X_img = np.zeros((num_regions_in_split, self.cnn_data.get_cnn_dim()))
 
         region_index = 0
         split_region_index = 0
         for img_id in img_ids:
-            n_regions_in_img_id = self.img_id2cnn_region_indeces[img_id]
+            n_regions_in_img_id = len(self.img_id2cnn_region_indeces[img_id])
             word_list = self.json_file.get_word_list_of_img_id(img_id)
             # keep words only from the zappos (external) vocab.  These are the queries.
             word_list_external_vocab = [w for w in word_list if w in external_vocab]
@@ -190,5 +187,3 @@ class EvaluationData(ExperimentData):
         self.X_txt = self.w2v_data.get_word_vectors_of_word_list(external_vocab)
 
         return
-
-
