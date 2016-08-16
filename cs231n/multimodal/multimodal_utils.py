@@ -1,4 +1,23 @@
 import numpy as np
+from cs231n.multimodal.data_provider.json_data import JsonFile
+
+
+def mk_toy_img_id2region_indices(json_fname, num_regions_per_img, subset_num_items=-1):
+
+    json_file = JsonFile(json_fname, num_items=subset_num_items)
+
+    img_ids = json_file.get_img_ids()
+
+    img_id2region_indices = {}
+
+    region_index = 0
+    for img_id in img_ids:
+        img_id2region_indices[img_id] = []
+        for i in range(num_regions_per_img):
+            img_id2region_indices[img_id].append(region_index)
+            region_index += 1
+
+    return img_id2region_indices
 
 
 def y2pair_id(y, N):
@@ -50,6 +69,7 @@ def pair_id2y(region2pair_id, word2pair_id):
 
 
 if __name__ == '__main__':
+
     yy = np.array([[1, 1, -1, -1, -1, -1, -1],
                   [1, 1, -1, -1, -1, -1, -1],
                   [-1, -1, 1, 1, -1, -1, -1],
@@ -63,5 +83,16 @@ if __name__ == '__main__':
     w2p = np.array([0, 0, 1, 1, 2, 2, 2])
 
     assert np.allclose(pair_id2y(r2p, w2p), yy)
+    #
+    # print y2pair_id(yy, N=3)
 
-    print y2pair_id(yy, N=3)
+    from cs231n.multimodal.data_provider.data_tests import data_config
+
+    fname = data_config.dc['json_path_test']
+    imgid2regionind = mk_toy_img_id2region_indices(json_fname=fname, num_regions_per_img=5, subset_num_items=3)
+    correct = {}
+    correct[6] = [0,1,2,3,4]
+    correct[80] = [5,6,7,8,9]
+    correct[147] = [10, 11, 12, 13, 14]
+    print imgid2regionind  # {80: [5, 6, 7, 8, 9], 147: [10, 11, 12, 13, 14], 6: [0, 1, 2, 3, 4]}
+    # assert imgid2regionind == correct
