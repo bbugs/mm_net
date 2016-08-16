@@ -17,8 +17,6 @@ class Word2VecData(object):
         self.word2vec_dim = 0
         self.word2vec_vocab = None
 
-        # self.external_vocab = None
-        # self.external_word_vectors = np.array([])
         return
 
     def set_word2vec_vocab(self):
@@ -66,59 +64,3 @@ class Word2VecData(object):
             i += 1
 
         return X_txt
-
-    # def get_vocab(self, vocab_name='word2vec'):
-    #
-    #     if vocab_name == 'word2vec':
-    #         if len(self.word2vec_vocab) == 0:
-    #             self.set_word2vec_vocab()
-    #         return self.word2vec_vocab
-    #
-    #     if vocab_name == 'external':
-    #         if len(self.external_vocab) == 0:
-    #             self.set_external_vocab()
-    #         return self.external_vocab
-    #
-    # def get_external_vocab(self):
-    #     if len(self.external_vocab) == 0:
-    #         self.set_external_vocab()
-    #     return self.external_vocab
-    #
-    # def get_vocab_dicts(self, vocab_name='word2vec'):
-    #     """
-    #     Return word2id, id2word of the vocab_name
-    #     """
-    #     if vocab_name == 'word2vec':
-    #         if len(self.word2vec_vocab) == 0:
-    #             self.set_word2vec_vocab()
-    #         vocab = self.word2vec_vocab
-    #
-    #     elif vocab_name == 'external':
-    #         if len(self.external_vocab) == 0:
-    #             self.set_external_vocab()
-    #         vocab = self.external_vocab
-    #
-    #     else:
-    #         raise ValueError("vocabs supported are word2vec and external only")
-    #
-    #     word2id = {}
-    #     id2word = {}
-    #     i = 0
-    #     for word in vocab:
-    #         word2id[word] = i
-    #         id2word[i] = word
-    #         i += 1
-    #     return word2id, id2word
-    #
-    #
-    #
-    # def _load_cnn_features(self, cnn_fname):
-    #     self.cnn = np.loadtxt(cnn_fname, delimiter=',')
-    #
-    # def get_split(self, split='test', num_samples=-1):
-    #     X_img = np.array([])
-    #     X_txt = np.array([])
-    #     region2pair_id = []
-    #     word2pair_id = []
-    #
-    #     return X_img, X_txt, region2pair_id, word2pair_id
