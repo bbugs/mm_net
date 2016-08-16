@@ -21,7 +21,7 @@ X_txt = dd.get_word_vectors_of_word_list(['random_stuff', 'cat', 'is', 'nice', '
 # print X_txt
 # print X_txt.shape
 
-X_txt = dd.get_word_vectors_of_word_list(['v-neck', 'a-line'])  # 264906, 307259
+X_txt = dd.get_word_vectors_of_word_list(['v-neck', 'a-line', 'random-stuff'])  # 264906, 307259
 
 correct_vneck = np.array([-0.11086, -1.006, 0.11159, 0.23023, 0.29037, 0.33901, 0.62025, 0.23046, 0.043336])
 correct_aline = np.array([-0.019347, -0.60523, 0.078378, 0.20013, 0.20616, -0.12931, 0.30628, 0.025562, 0.024776])
@@ -31,3 +31,7 @@ print X_txt[1, 0:9]
 
 assert np.allclose(X_txt[0, 0:9], correct_vneck)
 assert np.allclose(X_txt[1, 0:9], correct_aline)
+
+# print "\n\n"
+# print X_txt[2,:]  # check the word random-stuff
+# print X_txt.shape

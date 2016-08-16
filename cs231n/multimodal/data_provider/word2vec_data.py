@@ -37,88 +37,6 @@ class Word2VecData(object):
             self.set_word2vec_dim()
         return self.word2vec_dim
 
-    # def set_external_vocab(self):
-    #     self.external_vocab = Vocabulary(self.d['external_vocab'])
-    #     # with open(self.d['external_vocab'], 'rb') as f:
-    #     #     self.external_vocab = [w.replace('\n', '') for w in f.readlines()]
-    #
-    # def set_word_vectors(self, verbose=False):
-    #     # TODO: consider using linecache to load only the lines that you need and not the entire word2vec matrix
-    #     # set word2vec_vocab if not already loaded
-    #     if self.word2vec_vocab is None:
-    #         if verbose:
-    #             print "loading word2vec vocab... \n"
-    #         self.set_word2vec_vocab()
-    #
-    #     # load word2vec vectors
-    #     if verbose:
-    #         print "loading word2vec vectors... \n"
-    #
-    #     # start = time.time()
-    #     self.word2vec_vectors = np.loadtxt(self.d['word2vec_vectors'])
-    #     # end = time.time()
-    #
-    #     # set word2vec_dim
-    #     self.word2vec_dim = self.word2vec_vectors.shape[1]
-    #
-    #     if verbose:
-    #         print "word2vec shape", self.word2vec_vectors.shape
-    #         # print str((end - start)) + "s"
-    #
-    #     return
-
-        # def set_external_word_vectors(self):
-    #
-    #     if self.word2vec_vectors.size == 0:
-    #         self.set_word_vectors()
-    #
-    #     if self.external_vocab is None:
-    #         self.set_external_vocab()
-    #
-    #     word2id, id2word = self.word2vec_vocab.get_vocab_dicts()
-    #
-    #     ext_vocab = self.external_vocab.get_vocab()
-    #     self.external_word_vectors = np.zeros((len(ext_vocab), self.word2vec_dim))
-    #     i = 0
-    #     for word in ext_vocab:
-    #         if word not in word2id:
-    #             # TODO: change ngrams from _ to -.
-    #             # TODO: initialize weights randomly if not found in word2vec
-    #             print word + " not in word2vec"
-    #             i += 1
-    #             continue
-    #         w_id = word2id[word]
-    #         self.external_word_vectors[i, :] = self.word2vec_vectors[w_id, :]
-    #         i += 1
-    #     return
-
-    # def get_word_vectors(self, external_vocab=False):
-    #     """
-    #     Convinience method to return either
-    #     X_txt_word2vec (external_vocab=False) or
-    #     X_txt_zappos (external_vocab=True)
-    #     """
-    #
-    #     # return the subset of word vectors for the external vocabulary
-    #     if external_vocab:
-    #         if self.external_word_vectors.size == 0:
-    #             self.set_external_word_vectors()
-    #         return self.external_word_vectors
-    #
-    #     # return the ALL word vectors
-    #     else:
-    #         if self.word2vec_vectors.size == 0:
-    #             self.set_word_vectors()
-    #         return self.word2vec_vectors
-
-    # def get_external_word_vectors(self):
-    #     """
-    #     Convinience method to return X_txt_zappos
-    #     """
-    #     if self.external_word_vectors.size == 0:
-    #         self.set_external_word_vectors()
-    #     return self.external_word_vectors
-
     def get_word_vectors_of_word_list(self, word_list):
 
         if self.word2vec_vocab is None:
@@ -134,7 +52,9 @@ class Word2VecData(object):
         i = 0
         for word in word_list:
             if word not in word2id:
-                # TODO: initiliaze weights randomly if word not found in word2vec (or set it to a common word?)
+                # seed is set so that we don't get different results every time this is called
+                np.random.seed(42)
+                X_txt[i, :] = np.random.randn(self.word2vec_dim)
                 print word, " not in word2vec"
                 i += 1
                 continue
@@ -143,7 +63,6 @@ class Word2VecData(object):
             # X_txt[i, :] = self.word2vec_vectors[w_id, :]
             # Note that linecache line numbers start at 1.
             X_txt[i, :] = np.fromstring(linecache.getline(self.w2v_vectors_fname, w_id + 1), sep=" ")
-            #TODO: test that linecache reads in the right word vecto
             i += 1
 
         return X_txt
