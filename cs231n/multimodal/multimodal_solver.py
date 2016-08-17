@@ -9,7 +9,7 @@ class MultiModalSolver(object):
 
     """
 
-    def __init__(self, model, batch_data, eval_data_train, eval_data_val, **kwargs):
+    def __init__(self, model, batch_data, eval_data_train, eval_data_val, num_items_train, **kwargs):
         """
         Construct a new Solver instance.
 
@@ -40,7 +40,7 @@ class MultiModalSolver(object):
         """
         self.model = model
         self.batch_data = batch_data
-        self.num_items_train = eval_data_train.X_img.shape[0]  # number of images in training set
+        self.num_items_train = num_items_train  # eval_data_train.X_img.shape[0]  # number of images in training set
 
         self.X_img_train = eval_data_train.X_img
         self.X_txt_train = eval_data_train.X_txt
@@ -99,9 +99,30 @@ class MultiModalSolver(object):
         self.epoch = 0
         self.best_val_f1 = 0
         self.best_params = {}
+
         self.loss_history = []
+
+        # overall together both tasks img2txt & txt2img
         self.train_f1_history = []
         self.val_f1_history = []
+
+        # img2txt
+        self.train_f1_img2txt_history = []
+        self.train_precision_img2txt_history = []
+        self.train_recall_img2txt_history = []
+
+        self.val_f1_img2txt_history = []
+        self.val_precision_img2txt_history = []
+        self.val_recall_img2txt_history = []
+
+        # txt2img
+        self.train_f1_txt2img_history = []
+        self.train_precision_txt2img_history = []
+        self.train_recall_txt2img_history = []
+
+        self.val_f1_txt2img_history = []
+        self.val_precision_txt2img_history = []
+        self.val_recall_txt2img_history = []
 
         # Make a deep copy of the optim_config for each parameter
         self.optim_configs = {}
@@ -152,7 +173,7 @@ class MultiModalSolver(object):
     #
     #     return f1
 
-    def check_f1_img2txt(self, X_img_queries, X_txt_target, y_true_img2txt):
+    def check_performance_img2txt(self, X_img_queries, X_txt_target, y_true_img2txt):
         """
 
         Inputs:
@@ -173,9 +194,9 @@ class MultiModalSolver(object):
 
         p, r, f1 = metrics.precision_recall_f1(y_pred, y_true_img2txt, raw_scores=False)
 
-        return f1
+        return p, r, f1
 
-    def check_f1_txt2img(self, X_img_target, X_txt_queries, y_true_txt2img):
+    def check_performance_txt2img(self, X_img_target, X_txt_queries, y_true_txt2img):
 
         """
         Inputs:
@@ -192,8 +213,7 @@ class MultiModalSolver(object):
 
         p, r, f1 = metrics.precision_recall_f1(y_pred, y_true_txt2img, raw_scores=False)
 
-        return f1
-
+        return p, r, f1
 
     def check_accuracy(self, X, y, num_samples=None, batch_size=100):
         """
@@ -265,24 +285,58 @@ class MultiModalSolver(object):
             last_it = (t == num_iterations + 1)
             if first_it or last_it or epoch_end:
 
-                f1_img2txt_train = self.check_f1_img2txt(self.X_img_train, self.X_txt_train, self.y_true_img2txt_train)
-                f1_img2txt_val = self.check_f1_img2txt(self.X_img_val, self.X_txt_val, self.y_true_img2txt_val)
+                p_i2t_t, r_i2t_t, f1_i2t_t = self.check_performance_img2txt(self.X_img_train, self.X_txt_train, self.y_true_img2txt_train)
 
+                p_i2t_v, r_i2t_v, f1_i2t_v = self.check_performance_img2txt(self.X_img_val, self.X_txt_val, self.y_true_img2txt_val)
 
+                p_t2i_t, r_t2i_t, f1_t2i_t = self.check_performance_txt2img(self.X_img_train, self.X_txt_train, self.y_true_img2txt_train.T)
+                p_t2i_v, r_t2i_v, f1_t2i_v = self.check_performance_txt2img(self.X_img_val, self.X_txt_val, self.y_true_img2txt_val.T)
 
                 # train_acc = self.check_accuracy(self.X_train, self.y_train,
                 #                                 num_samples=1000)
                 # val_acc = self.check_accuracy(self.X_val, self.y_val)
-                self.train_f1_history.append(train_acc)
-                self.val_f1_history.append(val_acc)
+
+                # overall average f1 of both tasks both tasks img2txt & txt2img
+                f1_train = 0.5 * (f1_i2t_t + f1_t2i_t)
+                f1_val = 0.5 * (f1_i2t_v + f1_t2i_v)
+                self.train_f1_history.append(f1_train)
+                self.val_f1_history.append(f1_val)
+
+                # img2txt
+                self.train_f1_img2txt_history.append(f1_i2t_t)
+                self.train_precision_img2txt_history.append(p_i2t_t)
+                self.train_recall_img2txt_history.append(r_i2t_t)
+
+                self.val_f1_img2txt_history.append(f1_i2t_v)
+                self.val_precision_img2txt_history.append(p_i2t_v)
+                self.val_recall_img2txt_history.append(r_i2t_v)
+
+                # txt2img
+                self.train_f1_txt2img_history.append(f1_t2i_t)
+                self.train_precision_txt2img_history.append(p_t2i_t)
+                self.train_recall_txt2img_history.append(r_t2i_t)
+
+                self.val_f1_txt2img_history.append(f1_t2i_v)
+                self.val_precision_txt2img_history.append(p_t2i_v)
+                self.val_recall_txt2img_history.append(r_t2i_v)
 
                 if self.verbose:
-                    print '(Epoch %d / %d) train acc: %f; val_acc: %f' % (
-                        self.epoch, self.num_epochs, train_acc, val_acc)
+                    print '(Epoch %d / %d) train f1: %f; val_f1: %f' % (
+                        self.epoch, self.num_epochs, f1_train, f1_val)
+
+                    print "\nImg2Txt Performance"
+                    print "TRAIN f1: {}; \t p: {}; \t r: {}".format(f1_i2t_t, p_i2t_t, r_i2t_t)
+                    print "VAL f1: {}; \t p: {}; \t r: {}".format(f1_i2t_v, p_i2t_v, r_i2t_v)
+
+                    print "\nTxt2Img Performance"
+                    print "TRAIN f1: {}; \t p: {}; \t r: {}".format(f1_t2i_t, p_t2i_t, r_t2i_t)
+                    print "VAL f1: {}; \t p: {}; \t r: {}".format(f1_t2i_v, p_t2i_v, r_t2i_v)
+
+                    print "\n\n\n"
 
                 # Keep track of the best model
-                if val_acc > self.best_val_f1:
-                    self.best_val_f1 = val_acc
+                if f1_val > self.best_val_f1:
+                    self.best_val_f1 = f1_val
                     self.best_params = {}
                     for k, v in self.model.params.iteritems():
                         self.best_params[k] = v.copy()
