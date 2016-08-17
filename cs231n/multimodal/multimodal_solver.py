@@ -21,6 +21,9 @@ class MultiModalSolver(object):
           'y_train': Array of shape (N_train,) giving labels for training images
           'y_val': Array of shape (N_val,) giving labels for validation images
 
+        - uselocal: Boolean; indicate if you want to use local loss
+        - useglobal: Boolean; indicate if you want to use global loss
+
         Optional arguments:
         - update_rule: A string giving the name of an update rule in optim.py.
           Default is 'sgd'.
@@ -37,6 +40,9 @@ class MultiModalSolver(object):
           iterations.
         - verbose: Boolean; if set to false then no output will be printed during
           training.
+
+
+
         """
         self.model = model
         self.batch_data = batch_data
@@ -76,6 +82,9 @@ class MultiModalSolver(object):
 
         self.print_every = kwargs.pop('print_every', 10)
         self.verbose = kwargs.pop('verbose', True)
+
+        self.uselocal = kwargs.pop('uselocal')
+        self.useglobal = kwargs.pop('useglobal')
 
         # Throw an error if there are extra keyword arguments
         if len(kwargs) > 0:
@@ -148,7 +157,10 @@ class MultiModalSolver(object):
 
         # Compute loss and gradient
         # loss, grads = self.model.loss(X_batch, y_batch)
-        loss, grads = self.model.loss(X_img_batch, X_txt_batch, region2pair_id, word2pair_id)
+        loss, grads = self.model.loss(X_img_batch, X_txt_batch,
+                                      region2pair_id, word2pair_id,
+                                      uselocal=self.uselocal,
+                                      useglobal=self.useglobal)
         self.loss_history.append(loss)
 
         # Perform a parameter update
@@ -188,7 +200,10 @@ class MultiModalSolver(object):
         and thus measure how well the network can retrieve those visual words. But
         this function does not need to know, it just needs +1 or -1 for all region-word pairs
         """
-        sim_region_word = self.model.loss(X_img_queries, X_txt_target)
+        sim_region_word = self.model.loss(X_img_queries, X_txt_target,
+                                          region2pair_id=None, word2pair_id=None,
+                                          uselocal=self.uselocal,
+                                          useglobal=self.useglobal)
         y_pred = np.ones(sim_region_word.shape)
         y_pred[sim_region_word < 0] = -1  # when the sim scores are < 0, classification is negative
 
@@ -207,7 +222,10 @@ class MultiModalSolver(object):
         whether or not (+1,-1) the ith zappos word corresponds to the jth image.
 
         """
-        sim_word_region = self.model.loss(X_img_target, X_txt_queries).T
+        sim_word_region = self.model.loss(X_img_target, X_txt_queries,
+                                          region2pair_id=None, word2pair_id=None,
+                                          uselocal=self.uselocal,
+                                          useglobal=self.useglobal).T
         y_pred = np.ones(sim_word_region.shape)
         y_pred[sim_word_region < 0] = -1  # when the sim scores are < 0, classification is negative
 
@@ -285,12 +303,17 @@ class MultiModalSolver(object):
             last_it = (t == num_iterations + 1)
             if first_it or last_it or epoch_end:
 
-                p_i2t_t, r_i2t_t, f1_i2t_t = self.check_performance_img2txt(self.X_img_train, self.X_txt_train, self.y_true_img2txt_train)
+                p_i2t_t, r_i2t_t, f1_i2t_t = self.check_performance_img2txt(self.X_img_train, self.X_txt_train,
+                                                                            self.y_true_img2txt_train)
 
-                p_i2t_v, r_i2t_v, f1_i2t_v = self.check_performance_img2txt(self.X_img_val, self.X_txt_val, self.y_true_img2txt_val)
+                p_i2t_v, r_i2t_v, f1_i2t_v = self.check_performance_img2txt(self.X_img_val, self.X_txt_val,
+                                                                            self.y_true_img2txt_val)
 
-                p_t2i_t, r_t2i_t, f1_t2i_t = self.check_performance_txt2img(self.X_img_train, self.X_txt_train, self.y_true_img2txt_train.T)
-                p_t2i_v, r_t2i_v, f1_t2i_v = self.check_performance_txt2img(self.X_img_val, self.X_txt_val, self.y_true_img2txt_val.T)
+                p_t2i_t, r_t2i_t, f1_t2i_t = self.check_performance_txt2img(self.X_img_train, self.X_txt_train,
+                                                                            self.y_true_img2txt_train.T)
+
+                p_t2i_v, r_t2i_v, f1_t2i_v = self.check_performance_txt2img(self.X_img_val, self.X_txt_val,
+                                                                            self.y_true_img2txt_val.T)
 
                 # train_acc = self.check_accuracy(self.X_train, self.y_train,
                 #                                 num_samples=1000)

@@ -28,7 +28,7 @@ def precision_recall_f1(y_pred, y_true, raw_scores=False):
       (true) No | fp | fn |
 
     """
-
+    # TODO: test this method and investigate when recall is 1.
     # True Positives
     # you predict +1 and it's actually +1
     true_pos = np.zeros(y_pred.shape)
@@ -54,7 +54,7 @@ def precision_recall_f1(y_pred, y_true, raw_scores=False):
     recall = float(true_pos) / (true_pos + false_negatives)
     f1 = 2. * precision * recall / (precision + recall)
 
-    print precision, recall, f1
+    return precision, recall, f1
 
 
 def reciprocal_rank(ytrue, ypred, verbose=False):

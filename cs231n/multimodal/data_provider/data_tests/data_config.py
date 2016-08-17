@@ -40,3 +40,40 @@ dc['val_vocab'] = root_path + '/fashion53k/vocab_per_split/vocab_val_min_freq_5.
 dc['test_vocab'] = root_path + '/fashion53k/vocab_per_split/vocab_test_min_freq_5.txt'  # do we need this ??
 
 dc['target_vocab_fname'] = dc['test_vocab']
+
+####################################################################
+# Set loss parameters
+####################################################################
+loss_params = {}
+
+loss_params['reg'] = 1  # regularization
+loss_params['hidden_dim'] = 700  # size of multimodal space
+loss_params['finetune_cnn'] = False
+loss_params['finetune_w2v'] = False
+
+# local loss params
+loss_params['uselocal'] = True
+loss_params['local_margin'] = 1.
+loss_params['local_scale'] = 1.
+loss_params['do_mil'] = False
+
+# global loss params
+loss_params['useglobal'] = False
+loss_params['global_margin'] = 40.
+loss_params['global_scale'] = 1.
+loss_params['smooth_num'] = 5.
+loss_params['global_method'] = 'sum'
+loss_params['thrglobalscore'] = False
+
+####################################################################
+# Set optimization parameters
+####################################################################
+
+optimization_params = {}
+optimization_params['lr'] = 1e-6  # learning rate
+optimization_params['lr_decay'] = 0.95
+optimization_params['num_epochs'] = 10
+optimization_params['batch_size'] = 100
+
+
+

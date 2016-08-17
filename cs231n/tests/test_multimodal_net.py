@@ -28,7 +28,7 @@ loss_params['do_mil'] = do_mil = False
 loss_params['useglobal'] = useglobal = True
 loss_params['global_margin'] = global_margin = 40.
 loss_params['global_scale'] = global_scale = 1.
-loss_params['smooth_num'] = smotth_num = 5.
+loss_params['smooth_num'] = smooth_num = 5.
 loss_params['global_method'] = global_method = 'sum'
 loss_params['thrglobalscore'] = thrglobalscore = False
 
@@ -71,7 +71,7 @@ X_txt = np.random.randn(n_words, txt_input_dim)
 mmnet = multimodal_net.MultiModalNet(img_input_dim, txt_input_dim, hidden_dim, weight_scale, reg=reg, seed=seed)
 
 mmnet.set_global_score_hyperparams(global_margin=global_margin, global_scale=global_scale,
-                                   smooth_num=smotth_num, global_method=global_method,
+                                   smooth_num=smooth_num, global_method=global_method,
                                    thrglobalscore=thrglobalscore)
 
 mmnet.set_local_hyperparams(local_margin=local_margin, local_scale=local_scale, do_mil=do_mil)

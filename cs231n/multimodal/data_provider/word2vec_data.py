@@ -53,7 +53,7 @@ class Word2VecData(object):
                 # seed is set so that we don't get different results every time this is called
                 np.random.seed(42)
                 X_txt[i, :] = np.random.randn(self.word2vec_dim)
-                print word, " not in word2vec"
+                # print word, " not in word2vec"
                 i += 1
                 continue
 

@@ -164,6 +164,8 @@ class MultiModalNet(object):
         ############################################################################
 
         # unnpack keyword arguments
+        # TODO: consider adding these options in the init of the net?
+        # TODO: if r2pairid and w2pairid are None, you don't need these uselocal, useglobal
         uselocal = kwargs.pop('uselocal')
         useglobal = kwargs.pop('useglobal')
 
