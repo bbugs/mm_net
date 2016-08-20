@@ -282,12 +282,18 @@ class MultiModalSolver(object):
         num_iterations = self.num_epochs * iterations_per_epoch
 
         for t in xrange(num_iterations):
+
+            # # Modluate finetuning
+            # # TODO: Solver needs to know about finetuning? and do_mil?
+            # if t > 10:
+            #     self.model.do_mil = True
+
             self._step()
 
             # Maybe print training loss
             if self.verbose and t % self.print_every == 0:
-                print '(Iteration %d / %d) loss: %f' % (
-                    t + 1, num_iterations, self.loss_history[-1])
+                print '(Epoch: %d / %d Iteration %d / %d) loss: %f' % (
+                    self.epoch, self.num_epochs, t + 1, num_iterations, self.loss_history[-1])
 
             # At the end of every epoch, increment the epoch counter and decay the
             # learning rate.

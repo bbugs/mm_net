@@ -62,7 +62,7 @@ loss_params['useglobal'] = False
 loss_params['global_margin'] = 40.
 loss_params['global_scale'] = 1.
 loss_params['smooth_num'] = 5.
-loss_params['global_method'] = 'sum'
+loss_params['global_method'] = 'sum'  # maxaccum
 loss_params['thrglobalscore'] = False
 
 ####################################################################

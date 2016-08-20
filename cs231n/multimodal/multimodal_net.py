@@ -29,7 +29,7 @@ class MultiModalNet(object):
         self.params = {}
         self.reg = reg
         self.h = hidden_dim
-        self.loss_function = None
+        self.loss_function = None  # TODO: remove?
 
         # Initialize local loss hyperparams
         self.local_margin = None

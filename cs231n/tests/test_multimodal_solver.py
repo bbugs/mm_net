@@ -124,3 +124,18 @@ solver = MultiModalSolver(mm_net, batch_data, eval_data_train, eval_data_val, nu
                           print_every=2)
 
 solver.train()
+
+
+## Later
+# for i in xrange(len(lr)):
+#     for j in xrange(len(reg)):
+#         model = TwoLayerNet(hidden_dim=300, reg=reg[j], weight_scale=1e-2)
+#         solver = Solver(model, data,update_rule='rmsprop', optim_config={'learning_rate': lr[i],},
+#                       lr_decay=0.95,
+#                       num_epochs=10, batch_size=1024,
+#                       print_every=1024)
+#         solver.train()
+#         if solver.best_val_acc > best_val:
+#             best_model = model
+#             best_val = solver.best_val_acc
+#         results[lr[i],reg[j]] = solver.best_val_acc
