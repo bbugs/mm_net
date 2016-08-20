@@ -13,15 +13,15 @@ import math
 # Set batch data object
 ##############################################
 print "setting batch data"
-json_fname_train = data_config.dc['json_path_train']
-cnn_fname_train = data_config.dc['cnn_regions_path_train']
-num_regions_per_img = data_config.dc['num_regions_per_img']
+json_fname_train = data_config.config['json_path_train']
+cnn_fname_train = data_config.config['cnn_regions_path_train']
+num_regions_per_img = data_config.config['num_regions_per_img']
 imgid2region_indices_train = multimodal_utils.mk_toy_img_id2region_indices(json_fname_train,
                                                                            num_regions_per_img=num_regions_per_img,
                                                                            subset_num_items=-1)
 num_items_train = len(imgid2region_indices_train)
-w2v_vocab_fname = data_config.dc['word2vec_vocab']
-w2v_vectors_fname = data_config.dc['word2vec_vectors']
+w2v_vocab_fname = data_config.config['word2vec_vocab']
+w2v_vectors_fname = data_config.config['word2vec_vectors']
 
 batch_data = BatchData(json_fname_train, cnn_fname_train,
                        imgid2region_indices_train,
@@ -37,7 +37,7 @@ batch_data = BatchData(json_fname_train, cnn_fname_train,
 # ----------------------------------------------
 print "setting evaluation data for train split"
 # TODO: the evaluation data for both train and val should be with cnn for the full region
-external_vocab_fname = data_config.dc['external_vocab']
+external_vocab_fname = data_config.config['external_vocab']
 
 eval_data_train = EvaluationData(json_fname_train, cnn_fname_train, imgid2region_indices_train,
                                  w2v_vocab_fname, w2v_vectors_fname,
@@ -46,8 +46,8 @@ eval_data_train = EvaluationData(json_fname_train, cnn_fname_train, imgid2region
 # Val Evaluation Data
 # ----------------------------------------------
 print "setting evaluation data for val split"
-json_fname_val = data_config.dc['json_path_val']
-cnn_fname_val = data_config.dc['cnn_regions_path_val']
+json_fname_val = data_config.config['json_path_val']
+cnn_fname_val = data_config.config['cnn_regions_path_val']
 imgid2region_indices_val = multimodal_utils.mk_toy_img_id2region_indices(json_fname_val,
                                                                          num_regions_per_img=num_regions_per_img,
                                                                          subset_num_items=-1)
@@ -60,30 +60,30 @@ eval_data_val = EvaluationData(json_fname_val, cnn_fname_val, imgid2region_indic
 # Set the model
 ##############################################
 print "setting the model"
-img_input_dim = CnnData(cnn_fname=data_config.dc['cnn_regions_path_test']).get_cnn_dim()
+img_input_dim = CnnData(cnn_fname=data_config.config['cnn_regions_path_test']).get_cnn_dim()
 txt_input_dim = Word2VecData(w2v_vocab_fname, w2v_vectors_fname).get_word2vec_dim()
 
 # hyperparameters
-reg = data_config.loss_params['reg']
-hidden_dim = data_config.loss_params['hidden_dim']
+reg = data_config.config['reg']
+hidden_dim = data_config.config['hidden_dim']
 
 # fine tuning
-finetune_cnn = data_config.loss_params['finetune_cnn']
-finetune_w2v = data_config.loss_params['finetune_w2v']
+finetune_cnn = data_config.config['finetune_cnn']
+finetune_w2v = data_config.config['finetune_w2v']
 
 # local loss settings
-uselocal = data_config.loss_params['uselocal']
-local_margin = data_config.loss_params['local_margin']
-local_scale = data_config.loss_params['local_scale']
-do_mil = data_config.loss_params['do_mil']
+uselocal = data_config.config['uselocal']
+local_margin = data_config.config['local_margin']
+local_scale = data_config.config['local_scale']
+do_mil = data_config.config['do_mil']
 
 # global loss settings
-useglobal = data_config.loss_params['useglobal']
-global_margin = data_config.loss_params['global_margin']
-global_scale = data_config.loss_params['global_scale']
-smooth_num = data_config.loss_params['smooth_num']
-global_method = data_config.loss_params['global_method']
-thrglobalscore = data_config.loss_params['thrglobalscore']
+useglobal = data_config.config['useglobal']
+global_margin = data_config.config['global_margin']
+global_scale = data_config.config['global_scale']
+smooth_num = data_config.config['smooth_num']
+global_method = data_config.config['global_method']
+thrglobalscore = data_config.config['thrglobalscore']
 
 # weight scale for weight initialzation
 std_img = math.sqrt(2. / img_input_dim)
@@ -103,10 +103,10 @@ mm_net.set_local_hyperparams(local_margin=local_margin, local_scale=local_scale,
 # Set optimization parameters
 ##############################################
 print "setting the optimization parameters"
-lr = data_config.optimization_params['lr'] # learning rate
-lr_decay = data_config.optimization_params['lr_decay']
-num_epochs = data_config.optimization_params['num_epochs']
-batch_size = data_config.optimization_params['batch_size']
+lr = data_config.config['lr'] # learning rate
+lr_decay = data_config.config['lr_decay']
+num_epochs = data_config.config['num_epochs']
+batch_size = data_config.config['batch_size']
 
 
 ##############################################

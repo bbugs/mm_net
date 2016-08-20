@@ -6,8 +6,8 @@ import numpy as np
 
 from cs231n.multimodal import multimodal_utils
 
-json_fname = data_config.dc['json_path_test']
-cnn_fname = data_config.dc['cnn_regions_path_test']
+json_fname = data_config.config['json_path_test']
+cnn_fname = data_config.config['cnn_regions_path_test']
 cnn_data = CnnData(cnn_fname=cnn_fname)
 
 cnn = cnn_data.get_cnn_from_index(index=5)

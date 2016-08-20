@@ -3,7 +3,7 @@ from cs231n.multimodal.data_provider.alignment_data import AlignmentDataV0
 from cs231n.multimodal.data_provider.data_tests import data_config
 import numpy as np
 
-d = data_config.dc
+d = data_config.config
 
 align_data = AlignmentDataV0(d, split='test', num_items=10)
 

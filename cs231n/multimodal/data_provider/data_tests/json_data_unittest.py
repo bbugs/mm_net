@@ -3,7 +3,7 @@ from cs231n.multimodal.data_provider.data_tests import data_config
 from cs231n.multimodal.data_provider.json_data import JsonFile, check_img_ids
 from cs231n.multimodal import multimodal_utils
 
-d = data_config.dc
+d = data_config.config
 
 json_file = JsonFile(d['json_path_test'], num_items=10)
 

@@ -95,7 +95,7 @@ if __name__ == '__main__':
 
     from cs231n.multimodal.data_provider.data_tests import data_config
 
-    fname = data_config.dc['json_path_test']
+    fname = data_config.config['json_path_test']
     imgid2regionind = mk_toy_img_id2region_indices(json_fname=fname, num_regions_per_img=5, subset_num_items=3)
     correct = {}
     correct[6] = [0,1,2,3,4]
@@ -104,5 +104,5 @@ if __name__ == '__main__':
     print imgid2regionind  # {80: [5, 6, 7, 8, 9], 147: [10, 11, 12, 13, 14], 6: [0, 1, 2, 3, 4]}
     # assert imgid2regionind == correct
 
-    fname = data_config.dc['cnn_regions_path_test']
+    fname = data_config.config['cnn_regions_path_test']
     print get_num_lines_from_file(fname)
