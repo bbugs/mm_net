@@ -25,7 +25,7 @@ class MultiModalNet(object):
         Delving Deep into Rectifiers: Surpassing Human-Level Performance on ImageNet Classification
 
         """
-
+        # This is a comment on the net
         self.params = {}
         self.reg = reg
         self.h = hidden_dim
