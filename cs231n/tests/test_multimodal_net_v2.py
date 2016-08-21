@@ -22,13 +22,13 @@ loss_params['reg'] = reg = 0.
 loss_params['finetuneCNN'] = False
 
 # local loss params
-loss_params['uselocal'] = uselocal = False
+loss_params['uselocal'] = use_local = False
 loss_params['local_margin'] = local_margin = 1.
 loss_params['local_scale'] = local_scale = 1.
 loss_params['do_mil'] = do_mil = False
 
 # global loss params
-loss_params['useglobal'] = useglobal = True
+loss_params['useglobal'] = use_global = True
 loss_params['global_margin'] = global_margin = 40.
 loss_params['global_scale'] = global_scale = 1.
 loss_params['smooth_num'] = smotth_num = 5.
@@ -36,6 +36,12 @@ loss_params['global_method'] = global_method = 'sum'
 loss_params['thrglobalscore'] = thrglobalscore = False
 
 sio.savemat(rpath + 'loss_params.mat', {'loss_params': loss_params})
+
+# for my implementation, use_local and use_global are floats
+if use_local:
+    use_local = 1.
+if use_global:
+    use_global = 1.
 
 ####################################################################
 # Create random data
@@ -78,8 +84,9 @@ X_txt[:, -1] = 1
 # Initialize multimodal net
 ####################################################################
 
-mmnet = multimodal_net.MultiModalNet(img_input_dim, txt_input_dim, hidden_dim, weight_scale,
-                                     reg=reg, seed=seed)
+mmnet = multimodal_net.MultiModalNet(img_input_dim, txt_input_dim, hidden_dim,
+                                     weight_scale, reg=reg, seed=seed,
+                                     use_local=use_local, use_global=use_global)
 
 Wi2s = mmnet.params['Wi2s']
 Wsem = mmnet.params['Wsem']
@@ -107,8 +114,7 @@ mmnet.set_global_score_hyperparams(global_margin=global_margin, global_scale=glo
 
 mmnet.set_local_hyperparams(local_margin=local_margin, local_scale=local_scale, do_mil=do_mil)
 
-loss, grads = mmnet.loss(X_img, X_txt, region2pair_id, word2pair_id,
-                         useglobal=useglobal, uselocal=uselocal)
+loss, grads = mmnet.loss(X_img, X_txt, region2pair_id, word2pair_id)
 
 
 ###################

@@ -20,13 +20,13 @@ loss_params['finetune_cnn'] = finetune_cnn = True
 loss_params['finetune_w2v'] = finetune_w2v = True
 
 # local loss params
-loss_params['uselocal'] = uselocal = True
+loss_params['use_local'] = use_local = 1.
 loss_params['local_margin'] = local_margin = 1.
 loss_params['local_scale'] = local_scale = 1.
 loss_params['do_mil'] = do_mil = False
 
 # global loss params
-loss_params['useglobal'] = useglobal = False
+loss_params['use_global'] = use_global = 0.
 loss_params['global_margin'] = global_margin = 40.
 loss_params['global_scale'] = global_scale = 1.
 loss_params['smooth_num'] = smotth_num = 5.
@@ -71,8 +71,9 @@ X_txt = np.random.randn(n_words, txt_input_dim)
 ####################################################################
 
 mmnet = multimodal_net.MultiModalNet(img_input_dim, txt_input_dim,
-                                     hidden_dim, weight_scale, reg=reg,
-                                     seed=seed, finetune_cnn=finetune_cnn,
+                                     hidden_dim, weight_scale, reg=reg, seed=seed,
+                                     use_local=use_local, use_global=use_global,
+                                     finetune_cnn=finetune_cnn,
                                      finetune_w2v=finetune_w2v)
 
 mmnet.set_global_score_hyperparams(global_margin=global_margin, global_scale=global_scale,
@@ -93,8 +94,7 @@ assert Wsem_std < std_txt, 'Second layer weights do not seem right'
 
 
 print 'Testing training loss (no regularization)'
-loss, grads = mmnet.loss(X_img, X_txt, region2pair_id, word2pair_id,
-                         useglobal=useglobal, uselocal=uselocal)
+loss, grads = mmnet.loss(X_img, X_txt, region2pair_id, word2pair_id)
 
 print loss
 print grads.keys()
@@ -105,12 +105,10 @@ print "Testing the gradients"
 for reg in [0.0, 0.7, 10, 100, 1000]:
     print 'Running numeric gradient check with reg = ', reg
     mmnet.reg = reg
-    loss, grads = mmnet.loss(X_img, X_txt, region2pair_id, word2pair_id,
-                             uselocal=uselocal, useglobal=useglobal)
+    loss, grads = mmnet.loss(X_img, X_txt, region2pair_id, word2pair_id)
 
     for name in sorted(grads):
-        f = lambda _: mmnet.loss(X_img, X_txt, region2pair_id, word2pair_id,
-                                 uselocal=uselocal, useglobal=useglobal)[0]
+        f = lambda _: mmnet.loss(X_img, X_txt, region2pair_id, word2pair_id)[0]
         grad_num = eval_numerical_gradient(f, mmnet.params[name], verbose=False)
         print '\n%s relative error: %.2e' % (name, rel_error(grad_num, grads[name]))
         # print "grad_analaliic\n", name, "\n", grads[name]

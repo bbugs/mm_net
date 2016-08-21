@@ -16,8 +16,9 @@ class MultiModalNet(object):
 
     """
 
-    def __init__(self, img_input_dim, txt_input_dim, hidden_dim, weight_scale, reg=0.0, seed=None,
-                 finetune_cnn=False, finetune_w2v=False):
+    def __init__(self, img_input_dim, txt_input_dim, hidden_dim, weight_scale, reg=0.0,
+                 use_local=0., use_global=0., use_associat=0.,
+                 finetune_cnn=False, finetune_w2v=False, seed=None):
         """
         In practice, the current recommendation is to use ReLU units
         and use the w = np.random.randn(n) * sqrt(2.0/n), as discussed in He et al..
@@ -25,24 +26,29 @@ class MultiModalNet(object):
         Delving Deep into Rectifiers: Surpassing Human-Level Performance on ImageNet Classification
 
         """
-        # This is a comment on the net
+        assert use_local + use_global + use_associat == 1
+
         self.params = {}
         self.reg = reg
         self.h = hidden_dim
-        self.loss_function = None  # TODO: remove?
 
         # Initialize local loss hyperparams
+        self.use_local = use_local
         self.local_margin = None
         self.local_scale = None
         self.do_mil = None
 
         # Initialize global score hyperparams
+        self.use_global = use_global
         self.global_margin = None
         self.global_scale = None
         self.global_method = None
         self.thrglobalscore = None
         self.smooth_num = None
         self.non_lin_fun = None
+
+        # Initalize association scores hypeparams
+        self.use_associat = use_associat
 
         # Set finetuning options
         self.finetune_cnn = finetune_cnn
@@ -89,6 +95,7 @@ class MultiModalNet(object):
 
         """
         # verify that local hyper params have been set
+        assert self.use_local > 0
         assert self.local_margin is not None, "you need to set local_margin"
         assert self.local_scale is not None, "you need to set local_scale"
         assert self.do_mil is not None, "specify whether you want to do multiple instance learning"
@@ -104,6 +111,7 @@ class MultiModalNet(object):
     def loss_global(self, sim_region_word, region2pair_id, word2pair_id):
 
         # verify that global hyper params have been set
+        assert self.use_global > 0
         assert self.global_margin is not None, "set global margin"
         assert self.global_scale is not None, "set global scale"
         assert self.global_method is not None, "set global method, either sum or maxaccum"
@@ -136,7 +144,15 @@ class MultiModalNet(object):
 
         return loss * global_scale, d_local_scores * global_scale
 
-    def loss(self, X_img, X_txt, region2pair_id, word2pair_id, **kwargs):
+    def loss_association(self, sim_region_word, region_word_associat_scores):
+        # input include associat_region_word_scores (or something like that)
+        assert self.use_associat > 0
+        # TODO: Implement this function
+        loss = 0
+        d_scores = np.zeros(sim_region_word.shape)
+        return loss, d_scores
+
+    def loss(self, X_img, X_txt, region2pair_id, word2pair_id, region_word_associat_scores=None):
         """
         Compute loss and gradient for a minibatch of data.
 
@@ -163,18 +179,7 @@ class MultiModalNet(object):
         # variable.              #
         ############################################################################
 
-        # unnpack keyword arguments
-        # TODO: consider adding these options in the init of the net?
-        # TODO: if r2pairid and w2pairid are None, you don't need these uselocal, useglobal
-        uselocal = kwargs.pop('uselocal')
-        useglobal = kwargs.pop('useglobal')
-
-        # Throw an error if there are extra keyword arguments
-        if len(kwargs) > 0:
-            extra = ', '.join('"%s"' % k for k in kwargs.keys())
-            raise ValueError('Unrecognized arguments %s' % extra)
-
-        assert uselocal or useglobal, "at least one of them must be set to True"
+        assert self.use_local + self.use_global + self.use_associat == 1, "need to sum up to 1"
 
         # initialize cost
         loss = 0
@@ -211,17 +216,22 @@ class MultiModalNet(object):
 
         dscores = np.zeros(sim_region_word.shape)
 
-        if uselocal:
+        if self.use_local > 0:
             # make an appropriate y
             y = multimodal_utils.pair_id2y(region2pair_id, word2pair_id)
             local_loss, dscores1 = self.loss_local(sim_region_word, y)
             loss += local_loss
             dscores += dscores1
 
-        if useglobal:
+        if self.use_global > 0:
             global_loss, dscores2 = self.loss_global(sim_region_word, region2pair_id, word2pair_id)
             loss += global_loss
             dscores += dscores2
+
+        if self.use_associat > 0:
+            associat_loss, dscores3 = self.loss_association(sim_region_word, region_word_associat_scores)
+            loss += associat_loss
+            dscores += dscores3
 
         reg_loss = 0.5 * self.reg * (np.sum(Wi2s * Wi2s) +
                                      np.sum(Wsem * Wsem))
@@ -232,7 +242,6 @@ class MultiModalNet(object):
             reg_loss += 0.5 * self.reg * np.sum(Ww2v * Ww2v)
 
         loss += reg_loss  # add the regularization loss.
-
 
         # ############################################################################
         # # Implement the backward pass for the multimodal net.
