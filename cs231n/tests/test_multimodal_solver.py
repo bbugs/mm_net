@@ -26,7 +26,7 @@ w2v_vectors_fname = data_config.exp_config['word2vec_vectors']
 batch_data = BatchData(json_fname_train, cnn_fname_train,
                        imgid2region_indices_train,
                        w2v_vocab_fname, w2v_vectors_fname,
-                       subset_num_items=1000)
+                       subset_num_items=1000)  # TODO: set to -1 on the real experiments
 
 
 ##############################################
@@ -41,7 +41,7 @@ external_vocab_fname = data_config.exp_config['external_vocab']
 
 eval_data_train = EvaluationData(json_fname_train, cnn_fname_train, imgid2region_indices_train,
                                  w2v_vocab_fname, w2v_vectors_fname,
-                                 external_vocab_fname, subset_num_items=100)
+                                 external_vocab_fname, subset_num_items=100) # TODO: set to -1 on the real experiments
 # ______________________________________________
 # Val Evaluation Data
 # ----------------------------------------------
@@ -54,7 +54,7 @@ imgid2region_indices_val = multimodal_utils.mk_toy_img_id2region_indices(json_fn
 
 eval_data_val = EvaluationData(json_fname_val, cnn_fname_val, imgid2region_indices_val,
                                w2v_vocab_fname, w2v_vectors_fname,
-                               external_vocab_fname, subset_num_items=25)
+                               external_vocab_fname, subset_num_items=25) # TODO: set to -1 on the real experiments
 
 ##############################################
 # Set the model
@@ -67,18 +67,13 @@ txt_input_dim = Word2VecData(w2v_vocab_fname, w2v_vectors_fname).get_word2vec_di
 reg = data_config.exp_config['reg']
 hidden_dim = data_config.exp_config['hidden_dim']
 
-# fine tuning
-finetune_cnn = data_config.exp_config['finetune_cnn']
-finetune_w2v = data_config.exp_config['finetune_w2v']
-
 # local loss settings
-uselocal = data_config.exp_config['uselocal']
+use_local = data_config.exp_config['use_local']
 local_margin = data_config.exp_config['local_margin']
 local_scale = data_config.exp_config['local_scale']
-do_mil = data_config.exp_config['do_mil']
 
 # global loss settings
-useglobal = data_config.exp_config['useglobal']
+use_global = data_config.exp_config['use_global']
 global_margin = data_config.exp_config['global_margin']
 global_scale = data_config.exp_config['global_scale']
 smooth_num = data_config.exp_config['smooth_num']
@@ -91,37 +86,29 @@ std_txt = math.sqrt(2. / txt_input_dim)
 weight_scale = {'img': std_img, 'txt': std_txt}
 
 mm_net = multimodal_net.MultiModalNet(img_input_dim, txt_input_dim, hidden_dim, weight_scale, reg=reg, seed=None,
-                                      finetune_w2v=finetune_w2v, finetune_cnn=finetune_cnn)
+                                      finetune_w2v=False, finetune_cnn=False)
+# finetuning starts as false and it can be set to true inside the MultiModalSolver after a number of epochs.
 
 mm_net.set_global_score_hyperparams(global_margin=global_margin, global_scale=global_scale,
                                     smooth_num=smooth_num, global_method=global_method,
                                     thrglobalscore=thrglobalscore)
 
-mm_net.set_local_hyperparams(local_margin=local_margin, local_scale=local_scale, do_mil=do_mil)
-
-##############################################
-# Set optimization parameters
-##############################################
-print "setting the optimization parameters"
-lr = data_config.exp_config['lr'] # learning rate
-lr_decay = data_config.exp_config['lr_decay']
-num_epochs = data_config.exp_config['num_epochs']
-batch_size = data_config.exp_config['batch_size']
-
+mm_net.set_local_hyperparams(local_margin=local_margin, local_scale=local_scale, do_mil=False)  # do_mil starts as False and it can be set to True inside MultModalSolver after an number of epochs
 
 ##############################################
 # Train model with solver
 ##############################################
 print "starting training"
-solver = MultiModalSolver(mm_net, batch_data, eval_data_train, eval_data_val, num_items_train,
-                          uselocal=uselocal,
-                          useglobal=useglobal,
-                          update_rule='sgd',
-                          optim_config={'learning_rate': lr},
-                          lr_decay=lr_decay,
-                          num_epochs=num_epochs,
-                          batch_size=batch_size,
-                          print_every=2)
+solver = MultiModalSolver(mm_net, batch_data, eval_data_train, eval_data_val,
+                          num_items_train, data_config.exp_config, verbose=True)
+# uselocal=uselocal,
+# useglobal=useglobal,
+# update_rule='sgd',
+# optim_config={'learning_rate': lr},
+# lr_decay=lr_decay,
+# num_epochs=num_epochs,
+# batch_size=batch_size,
+# print_every=2)
 
 solver.train()
 

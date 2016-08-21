@@ -9,7 +9,8 @@ class MultiModalSolver(object):
 
     """
 
-    def __init__(self, model, batch_data, eval_data_train, eval_data_val, num_items_train, **kwargs):
+    def __init__(self, model, batch_data, eval_data_train, eval_data_val,
+                 num_items_train, exp_config, verbose=True):
         """
         Construct a new Solver instance.
 
@@ -56,6 +57,12 @@ class MultiModalSolver(object):
         self.X_txt_val = eval_data_val.X_txt
         self.y_true_img2txt_val = eval_data_val.y_true_img2txt
 
+        self.use_finetune_cnn = exp_config['use_finetune_cnn']
+        self.use_finetune_w2v = exp_config['use_finetune_w2v']
+        self.use_mil = exp_config['use_mil']
+
+        self.start_modulation = exp_config['start_modulation'] = 0.75
+
         # Train data
         # self.X_img_train = data['X_img_train']
         # self.X_txt_train = data['X_txt_train']
@@ -74,26 +81,18 @@ class MultiModalSolver(object):
         # self.
 
         # Unpack keyword arguments
-        self.update_rule = kwargs.pop('update_rule', 'sgd')
-        self.optim_config = kwargs.pop('optim_config', {})
-        self.lr_decay = kwargs.pop('lr_decay', 1.0)
-        self.batch_size = kwargs.pop('batch_size', 100)
-        self.num_epochs = kwargs.pop('num_epochs', 10)
+        self.update_rule = exp_config['update_rule']
+        self.optim_config = exp_config['optim_config']
+        self.lr_decay = exp_config['lr_decay']
+        self.batch_size = exp_config['batch_size']
+        self.num_epochs = exp_config['num_epochs']
 
-        self.print_every = kwargs.pop('print_every', 10)
-        self.verbose = kwargs.pop('verbose', True)
-
-        self.uselocal = kwargs.pop('uselocal')
-        self.useglobal = kwargs.pop('useglobal')
-
-        # Throw an error if there are extra keyword arguments
-        if len(kwargs) > 0:
-            extra = ', '.join('"%s"' % k for k in kwargs.keys())
-            raise ValueError('Unrecognized arguments %s' % extra)
+        self.print_every = exp_config['print_every']
+        self.verbose = verbose
 
         # Make sure the update rule exists, then replace the string
         # name with the actual function
-        if not hasattr(optim, self.update_rule):
+        if not hasattr(optim, self.update_rule):  # check if module optim has the attribute update_rule
             raise ValueError('Invalid update_rule "%s"' % self.update_rule)
         self.update_rule = getattr(optim, self.update_rule)  # replace the string name with the actual function
 
@@ -158,9 +157,7 @@ class MultiModalSolver(object):
         # Compute loss and gradient
         # loss, grads = self.model.loss(X_batch, y_batch)
         loss, grads = self.model.loss(X_img_batch, X_txt_batch,
-                                      region2pair_id, word2pair_id,
-                                      uselocal=self.uselocal,
-                                      useglobal=self.useglobal)
+                                      region2pair_id, word2pair_id)
         self.loss_history.append(loss)
 
         # Perform a parameter update
@@ -201,9 +198,7 @@ class MultiModalSolver(object):
         this function does not need to know, it just needs +1 or -1 for all region-word pairs
         """
         sim_region_word = self.model.loss(X_img_queries, X_txt_target,
-                                          region2pair_id=None, word2pair_id=None,
-                                          uselocal=self.uselocal,
-                                          useglobal=self.useglobal)
+                                          region2pair_id=None, word2pair_id=None)
         y_pred = np.ones(sim_region_word.shape)
         y_pred[sim_region_word < 0] = -1  # when the sim scores are < 0, classification is negative
 
@@ -223,9 +218,7 @@ class MultiModalSolver(object):
 
         """
         sim_word_region = self.model.loss(X_img_target, X_txt_queries,
-                                          region2pair_id=None, word2pair_id=None,
-                                          uselocal=self.uselocal,
-                                          useglobal=self.useglobal).T
+                                          region2pair_id=None, word2pair_id=None).T
         y_pred = np.ones(sim_word_region.shape)
         y_pred[sim_word_region < 0] = -1  # when the sim scores are < 0, classification is negative
 
@@ -287,6 +280,14 @@ class MultiModalSolver(object):
             # # TODO: Solver needs to know about finetuning? and do_mil?
             # if t > 10:
             #     self.model.do_mil = True
+
+            if self.epoch > self.start_modulation * self.num_epochs:
+                if self.use_mil:
+                    self.model.do_mil = True
+                if self.use_finetune_cnn:
+                    self.model.finetune_cnn = True
+                if self.use_finetune_w2v:
+                    self.model.finetune_w2v = True
 
             self._step()
 

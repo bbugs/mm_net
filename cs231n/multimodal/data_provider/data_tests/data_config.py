@@ -46,14 +46,16 @@ exp_config['target_vocab_fname'] = exp_config['test_vocab']
 ####################################################################
 exp_config['reg'] = 1  # regularization
 exp_config['hidden_dim'] = 700  # size of multimodal space
-exp_config['finetune_cnn'] = False
-exp_config['finetune_w2v'] = False
+exp_config['use_finetune_cnn'] = False
+exp_config['use_finetune_w2v'] = False
+
+exp_config['start_modulation'] = 0.75  # start after 0.75 of epochs
 
 # local loss params
 exp_config['uselocal'] = True
 exp_config['local_margin'] = 1.
 exp_config['local_scale'] = 1.
-exp_config['do_mil'] = False
+exp_config['use_mil'] = False
 
 # global loss params
 exp_config['useglobal'] = False
