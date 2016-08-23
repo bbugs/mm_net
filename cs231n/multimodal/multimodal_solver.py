@@ -365,13 +365,14 @@ class MultiModalSolver(object):
                         self.best_params[k] = v.copy()
                     report['model'] = self.best_params
 
-                    report_fname = self.exp_config['checkpoint_path'] + \
-                        'report_e_{0}_m_{1}_l_{2:.1f}_g_{3:.1f}_a_{4:.1f}_val_f1_{5:.4f}.pkl'.format(self.epoch,
-                                                                                                     int(self.use_mil),
-                                                                                                     self.exp_config['use_local'],
-                                                                                                     self.exp_config['use_global'],
-                                                                                                     self.exp_config['use_associat'],
-                                                                                                     self.best_val_f1_score)
+                    report_fname = self.exp_config['checkpoint_path']
+                    report_fname += 'report_e_{0}_m_{1}_' \
+                                    'l_{2:.1f}_g_{3:.1f}_a_{4:.1f}_' \
+                                    'val_f1_{5:.4f}.pkl'.format(self.epoch, int(self.use_mil),
+                                                                self.exp_config['use_local'],
+                                                                self.exp_config['use_global'],
+                                                                self.exp_config['use_associat'],
+                                                                self.best_val_f1_score)
                     with open(report_fname, "wb") as f:
                         pickle.dump(report, f)
 
