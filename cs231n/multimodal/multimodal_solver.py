@@ -44,8 +44,6 @@ class MultiModalSolver(object):
         - verbose: Boolean; if set to false then no output will be printed during
           training.
 
-
-
         """
         self.model = model
         self.batch_data = batch_data

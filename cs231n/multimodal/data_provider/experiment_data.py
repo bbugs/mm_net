@@ -137,6 +137,7 @@ class EvaluationData(ExperimentData):
 
         self.set_features()
         self.y_true_img2txt = self.y_true_txt2img.T
+        # todo: create evaluation data where the all words are target, but only zappos are correct
 
     def set_features(self):
         """
