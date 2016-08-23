@@ -39,7 +39,10 @@ exp_config['train_vocab'] = root_path + '/fashion53k/vocab_per_split/vocab_train
 exp_config['val_vocab'] = root_path + '/fashion53k/vocab_per_split/vocab_val_min_freq_5.txt'  # do we need this ??
 exp_config['test_vocab'] = root_path + '/fashion53k/vocab_per_split/vocab_test_min_freq_5.txt'  # do we need this ??
 
-exp_config['target_vocab_fname'] = exp_config['test_vocab']
+exp_config['target_vocab_fname'] = exp_config['test_vocab']  #TODO:I think this is unused, but I can use it for img2txt
+
+# path to save checkpoints and reports
+exp_config['checkpoint_path'] = root_path + '/data/fashion53k/experiment_results/'
 
 ####################################################################
 # Set loss parameters
@@ -52,32 +55,36 @@ exp_config['use_finetune_w2v'] = False
 exp_config['start_modulation'] = 0.75  # start after 0.75 of epochs
 
 # local loss params
-exp_config['uselocal'] = True
+exp_config['use_local'] = 1.
 exp_config['local_margin'] = 1.
 exp_config['local_scale'] = 1.
 exp_config['use_mil'] = False
 
 # global loss params
-exp_config['useglobal'] = False
+exp_config['use_global'] = 0.
 exp_config['global_margin'] = 40.
 exp_config['global_scale'] = 1.
 exp_config['smooth_num'] = 5.
 exp_config['global_method'] = 'sum'  # maxaccum
 exp_config['thrglobalscore'] = False
 
+# association loss params
+exp_config['use_associat'] = 0.
+
+
 ####################################################################
 # Set optimization parameters
 ####################################################################
 exp_config['update_rule'] = 'sgd'
 
-optim_config={'learning_rate': 1e-2}
+optim_config={'learning_rate': 1e-6}
 exp_config['optim_config'] = optim_config
 
 exp_config['lr_decay'] = 0.95
 
-exp_config['print_every'] = 10
-exp_config['num_epochs'] = 10
-exp_config['batch_size'] = 100
+exp_config['print_every'] = 2
+exp_config['num_epochs'] = 7
+exp_config['batch_size'] = 5
 
 
 

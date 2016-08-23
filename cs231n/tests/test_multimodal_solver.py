@@ -19,14 +19,14 @@ num_regions_per_img = data_config.exp_config['num_regions_per_img']
 imgid2region_indices_train = multimodal_utils.mk_toy_img_id2region_indices(json_fname_train,
                                                                            num_regions_per_img=num_regions_per_img,
                                                                            subset_num_items=-1)
-num_items_train = len(imgid2region_indices_train)
+num_items_train = 20  #len(imgid2region_indices_train)  #TODO: change back
 w2v_vocab_fname = data_config.exp_config['word2vec_vocab']
 w2v_vectors_fname = data_config.exp_config['word2vec_vectors']
 
 batch_data = BatchData(json_fname_train, cnn_fname_train,
                        imgid2region_indices_train,
                        w2v_vocab_fname, w2v_vectors_fname,
-                       subset_num_items=1000)  # TODO: set to -1 on the real experiments
+                       subset_num_items=20)  # TODO: set to -1 on the real experiments
 
 
 ##############################################
@@ -41,7 +41,7 @@ external_vocab_fname = data_config.exp_config['external_vocab']
 
 eval_data_train = EvaluationData(json_fname_train, cnn_fname_train, imgid2region_indices_train,
                                  w2v_vocab_fname, w2v_vectors_fname,
-                                 external_vocab_fname, subset_num_items=100) # TODO: set to -1 on the real experiments
+                                 external_vocab_fname, subset_num_items=50) # TODO: set to -1 on the real experiments
 # ______________________________________________
 # Val Evaluation Data
 # ----------------------------------------------
@@ -54,7 +54,7 @@ imgid2region_indices_val = multimodal_utils.mk_toy_img_id2region_indices(json_fn
 
 eval_data_val = EvaluationData(json_fname_val, cnn_fname_val, imgid2region_indices_val,
                                w2v_vocab_fname, w2v_vectors_fname,
-                               external_vocab_fname, subset_num_items=25) # TODO: set to -1 on the real experiments
+                               external_vocab_fname, subset_num_items=20) # TODO: set to -1 on the real experiments
 
 ##############################################
 # Set the model
@@ -80,13 +80,17 @@ smooth_num = data_config.exp_config['smooth_num']
 global_method = data_config.exp_config['global_method']
 thrglobalscore = data_config.exp_config['thrglobalscore']
 
+# associat loss settings
+use_associat = data_config.exp_config['use_associat']
+
 # weight scale for weight initialzation
 std_img = math.sqrt(2. / img_input_dim)
 std_txt = math.sqrt(2. / txt_input_dim)
 weight_scale = {'img': std_img, 'txt': std_txt}
 
-mm_net = multimodal_net.MultiModalNet(img_input_dim, txt_input_dim, hidden_dim, weight_scale, reg=reg, seed=None,
-                                      finetune_w2v=False, finetune_cnn=False)
+mm_net = multimodal_net.MultiModalNet(img_input_dim, txt_input_dim, hidden_dim, weight_scale,
+                                      reg=reg, seed=None, finetune_w2v=False, finetune_cnn=False,
+                                      use_local=use_local, use_global=use_global, use_associat=use_associat)
 # finetuning starts as false and it can be set to true inside the MultiModalSolver after a number of epochs.
 
 mm_net.set_global_score_hyperparams(global_margin=global_margin, global_scale=global_scale,

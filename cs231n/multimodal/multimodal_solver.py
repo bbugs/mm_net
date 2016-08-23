@@ -2,6 +2,8 @@ import numpy as np
 
 from cs231n import optim
 from cs231n.multimodal.evaluation import metrics
+import pickle
+import time
 
 
 class MultiModalSolver(object):
@@ -57,6 +59,8 @@ class MultiModalSolver(object):
         self.X_txt_val = eval_data_val.X_txt
         self.y_true_img2txt_val = eval_data_val.y_true_img2txt
 
+        self.exp_config = exp_config
+
         self.use_finetune_cnn = exp_config['use_finetune_cnn']
         self.use_finetune_w2v = exp_config['use_finetune_w2v']
         self.use_mil = exp_config['use_mil']
@@ -105,14 +109,11 @@ class MultiModalSolver(object):
         """
         # Set up some variables for book-keeping
         self.epoch = 0
-        self.best_val_f1 = 0
+        self.best_val_f1_score = 0
+        self.best_train_f1_score = 0
         self.best_params = {}
 
         self.loss_history = []
-
-        # overall together both tasks img2txt & txt2img
-        self.train_f1_history = []
-        self.val_f1_history = []
 
         # img2txt
         self.train_f1_img2txt_history = []
@@ -148,14 +149,7 @@ class MultiModalSolver(object):
         X_img_batch, X_txt_batch, region2pair_id, word2pair_id =\
             self.batch_data.get_minibatch(batch_size=self.batch_size)
 
-        #
-        # num_train = self.X_train.shape[0]
-        # batch_mask = np.random.choice(num_train, self.batch_size)
-        # X_batch = self.X_train[batch_mask]
-        # y_batch = self.y_train[batch_mask]
-
         # Compute loss and gradient
-        # loss, grads = self.model.loss(X_batch, y_batch)
         loss, grads = self.model.loss(X_img_batch, X_txt_batch,
                                       region2pair_id, word2pair_id)
         self.loss_history.append(loss)
@@ -167,20 +161,6 @@ class MultiModalSolver(object):
             next_w, next_config = self.update_rule(w, dw, config)
             self.model.params[p] = next_w
             self.optim_configs[p] = next_config
-
-    # def check_f1(self, X_img, X_txt, y_true):
-    #     """
-    #
-    #     Check f1 measure (combines both precision and recall)
-    #
-    #     """
-    #     sim_region_word = self.model.loss(X_img, X_txt)
-    #     y_pred = np.ones(sim_region_word.shape)
-    #     y_pred[sim_region_word < 0] = -1  # when the sim scores are < 0, classification is negative
-    #
-    #     p, r, f1 = metrics.precision_recall_f1(y_pred, y_true, raw_scores=False)
-    #
-    #     return f1
 
     def check_performance_img2txt(self, X_img_queries, X_txt_target, y_true_img2txt):
         """
@@ -270,18 +250,14 @@ class MultiModalSolver(object):
         """
         Run optimization to train the model.
         """
-        # num_train = self.X_train.shape[0]
         iterations_per_epoch = max(self.num_items_train / self.batch_size, 1)
         num_iterations = self.num_epochs * iterations_per_epoch
 
         for t in xrange(num_iterations):
-
-            # # Modluate finetuning
-            # # TODO: Solver needs to know about finetuning? and do_mil?
-            # if t > 10:
-            #     self.model.do_mil = True
-
+            print "iter", t
+            # Modulate do_mil and finetuning
             if self.epoch > self.start_modulation * self.num_epochs:
+                # TODO: print to screen and add to logger whether these have been started
                 if self.use_mil:
                     self.model.do_mil = True
                 if self.use_finetune_cnn:
@@ -293,7 +269,7 @@ class MultiModalSolver(object):
 
             # Maybe print training loss
             if self.verbose and t % self.print_every == 0:
-                print '(Epoch: %d / %d Iteration %d / %d) loss: %f' % (
+                print '(Epoch: %d / %d. \t Iteration %d / %d) \t loss: %f' % (
                     self.epoch, self.num_epochs, t + 1, num_iterations, self.loss_history[-1])
 
             # At the end of every epoch, increment the epoch counter and decay the
@@ -307,9 +283,17 @@ class MultiModalSolver(object):
             # Check train and val accuracy on the first iteration, the last
             # iteration, and at the end of each epoch.
             first_it = (t == 0)
-            last_it = (t == num_iterations + 1)
+            last_it = (t + 1 == num_iterations)
             if first_it or last_it or epoch_end:
 
+                # Create report
+                report = {}
+                report['loss_history'] = self.loss_history
+                report['iter'] = t
+                report['epoch'] = self.epoch
+                report['exp_config'] = self.exp_config
+
+                # Evaluate precision, recall and f1 on both tasks
                 p_i2t_t, r_i2t_t, f1_i2t_t = self.check_performance_img2txt(self.X_img_train, self.X_txt_train,
                                                                             self.y_true_img2txt_train)
 
@@ -321,16 +305,21 @@ class MultiModalSolver(object):
 
                 p_t2i_v, r_t2i_v, f1_t2i_v = self.check_performance_txt2img(self.X_img_val, self.X_txt_val,
                                                                             self.y_true_img2txt_val.T)
+                # TODO: look into whether it should be that txt2img and img2txt yeild same results
+                # TODO: is check_performance compatible with associat_loss?
 
-                # train_acc = self.check_accuracy(self.X_train, self.y_train,
-                #                                 num_samples=1000)
-                # val_acc = self.check_accuracy(self.X_val, self.y_val)
+                # Add to report
+                report['img2txt'] = {}
+                report['img2txt']['train_current_performance'] = {'p': p_i2t_t, 'r': r_i2t_t, 'f1': f1_i2t_t}
+                report['img2txt']['val_current_performance'] = {'p': p_i2t_v, 'r': r_i2t_v, 'f1': f1_i2t_v}
+
+                report['txt2img'] = {}
+                report['txt2img']['train_current_performance'] = {'p': p_t2i_t, 'r': r_t2i_t, 'f1': f1_t2i_t}
+                report['txt2img']['val_current_performance'] = {'p': p_t2i_v, 'r': r_t2i_v, 'f1': f1_t2i_v}
 
                 # overall average f1 of both tasks both tasks img2txt & txt2img
-                f1_train = 0.5 * (f1_i2t_t + f1_t2i_t)
-                f1_val = 0.5 * (f1_i2t_v + f1_t2i_v)
-                self.train_f1_history.append(f1_train)
-                self.val_f1_history.append(f1_val)
+                f1_train_score = 0.5 * (f1_i2t_t + f1_t2i_t)
+                f1_val_score = 0.5 * (f1_i2t_v + f1_t2i_v)
 
                 # img2txt
                 self.train_f1_img2txt_history.append(f1_i2t_t)
@@ -350,9 +339,59 @@ class MultiModalSolver(object):
                 self.val_precision_txt2img_history.append(p_t2i_v)
                 self.val_recall_txt2img_history.append(r_t2i_v)
 
+                report['img2txt']['train_history'] = {'p': self.train_precision_img2txt_history,
+                                                      'r': self.train_recall_img2txt_history,
+                                                      'f1': self.train_f1_img2txt_history}
+
+                report['img2txt']['val_history'] = {'p': self.val_precision_img2txt_history,
+                                                    'r': self.val_recall_img2txt_history,
+                                                    'f1': self.val_f1_img2txt_history}
+
+                report['txt2img']['train_history'] = {'p': self.train_precision_txt2img_history,
+                                                      'r': self.train_recall_txt2img_history,
+                                                      'f1': self.train_f1_txt2img_history}
+
+                report['txt2img']['val_history'] = {'p': self.val_precision_txt2img_history,
+                                                    'r': self.val_recall_txt2img_history,
+                                                    'f1': self.val_f1_txt2img_history}
+
+                # Check if performance is best so far, and if so save report and
+                # keep best weights in self.best_params
+                if f1_val_score > self.best_val_f1_score:
+                    self.best_val_f1_score = f1_val_score
+                    self.best_params = {}
+                    for k, v in self.model.params.iteritems():
+                        self.best_params[k] = v.copy()
+                    report['model'] = self.best_params
+
+                    report_fname = self.exp_config['checkpoint_path'] + \
+                        'report_e_{0}_m_{1}_l_{2:.1f}_g_{3:.1f}_a_{4:.1f}_val_f1_{5:.4f}.pkl'.format(self.epoch,
+                                                                                                     int(self.use_mil),
+                                                                                                     self.exp_config['use_local'],
+                                                                                                     self.exp_config['use_global'],
+                                                                                                     self.exp_config['use_associat'],
+                                                                                                     self.best_val_f1_score)
+                    with open(report_fname, "wb") as f:
+                        pickle.dump(report, f)
+
+                # get the best train score
+                if f1_train_score > self.best_train_f1_score:
+                    self.best_train_f1_score = f1_train_score
+
+                if last_it:  # save an endreport on last iteration
+                    report['model'] = {}  # no need to save weights on end report
+                    time_stamp = time.strftime('%Y_%m_%d_%H%M')
+                    end_report_fname = self.exp_config['checkpoint_path'] + \
+                                       '/end_report_{0}_tr_{1:.4f}_val_{2:.4f}.pkl'.format(time_stamp,
+                                                                                           self.best_train_f1_score,
+                                                                                           self.best_val_f1_score)
+
+                    with open(end_report_fname, "wb") as f:
+                        pickle.dump(report, f)
+
                 if self.verbose:
                     print '(Epoch %d / %d) train f1: %f; val_f1: %f' % (
-                        self.epoch, self.num_epochs, f1_train, f1_val)
+                        self.epoch, self.num_epochs, f1_train_score, f1_val_score)
 
                     print "\nImg2Txt Performance"
                     print "TRAIN f1: {}; \t p: {}; \t r: {}".format(f1_i2t_t, p_i2t_t, r_i2t_t)
@@ -364,12 +403,8 @@ class MultiModalSolver(object):
 
                     print "\n\n\n"
 
-                # Keep track of the best model
-                if f1_val > self.best_val_f1:
-                    self.best_val_f1 = f1_val
-                    self.best_params = {}
-                    for k, v in self.model.params.iteritems():
-                        self.best_params[k] = v.copy()
+
+
 
         # At the end of training swap the best params into the model
         self.model.params = self.best_params
