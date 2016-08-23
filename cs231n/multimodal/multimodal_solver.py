@@ -1,5 +1,5 @@
 import numpy as np
-
+import logging
 from cs231n import optim
 from cs231n.multimodal.evaluation import metrics
 import pickle
@@ -250,11 +250,11 @@ class MultiModalSolver(object):
         """
         Run optimization to train the model.
         """
+        logging.info("{} started training".format(time.strftime('%Y_%m_%d_%H%M')))
         iterations_per_epoch = max(self.num_items_train / self.batch_size, 1)
         num_iterations = self.num_epochs * iterations_per_epoch
 
         for t in xrange(num_iterations):
-            print "iter", t
             # Modulate do_mil and finetuning
             if self.epoch > self.start_modulation * self.num_epochs:
                 # TODO: print to screen and add to logger whether these have been started
@@ -268,9 +268,12 @@ class MultiModalSolver(object):
             self._step()
 
             # Maybe print training loss
-            if self.verbose and t % self.print_every == 0:
-                print '(Epoch: %d / %d. \t Iteration %d / %d) \t loss: %f' % (
+            if t % self.print_every == 0:
+                msg = 'Epoch: {} / {}. \t Iter {} / {} \t loss: {:.6f}'.format(
                     self.epoch, self.num_epochs, t + 1, num_iterations, self.loss_history[-1])
+                logging.info(msg)
+                if self.verbose:
+                    print msg
 
             # At the end of every epoch, increment the epoch counter and decay the
             # learning rate.
@@ -374,6 +377,8 @@ class MultiModalSolver(object):
                     with open(report_fname, "wb") as f:
                         pickle.dump(report, f)
 
+                    logging.info("saved report to {}".format(report_fname))
+
                 # get the best train score
                 if f1_train_score > self.best_train_f1_score:
                     self.best_train_f1_score = f1_train_score
@@ -388,24 +393,38 @@ class MultiModalSolver(object):
 
                     with open(end_report_fname, "wb") as f:
                         pickle.dump(report, f)
+                    logging.info("saved report to {}".format(end_report_fname))
+
+                msg = "iter {} \t train_f1 {:.4f} \t val_f1 {:.4f}".format(t+1, f1_train_score, f1_val_score)
+
+                msg += " \t i2t train p {:.4f} r {:.4f} f1 {:.4f}".format(p_i2t_t, r_i2t_t, f1_i2t_t)
+
+                msg += " \t i2t val p {:.4f} r {:.4f} f1 {:.4f}".format(p_i2t_v, r_i2t_v, f1_i2t_v)
+
+                msg += " \t t2i train p {:.4f} r {:.4f} f1 {:.4f}".format(p_t2i_t, r_t2i_t, f1_t2i_t)
+
+                msg += " \t t2i val p {:.4f} r {:.4f} f1 {:.4f}".format(p_t2i_v, r_t2i_v, f1_t2i_v)
+
+                logging.info(msg)
 
                 if self.verbose:
-                    print '(Epoch %d / %d) train f1: %f; val_f1: %f' % (
-                        self.epoch, self.num_epochs, f1_train_score, f1_val_score)
 
-                    print "\nImg2Txt Performance"
-                    print "TRAIN f1: {}; \t p: {}; \t r: {}".format(f1_i2t_t, p_i2t_t, r_i2t_t)
-                    print "VAL f1: {}; \t p: {}; \t r: {}".format(f1_i2t_v, p_i2t_v, r_i2t_v)
+                    print msg
 
-                    print "\nTxt2Img Performance"
-                    print "TRAIN f1: {}; \t p: {}; \t r: {}".format(f1_t2i_t, p_t2i_t, r_t2i_t)
-                    print "VAL f1: {}; \t p: {}; \t r: {}".format(f1_t2i_v, p_t2i_v, r_t2i_v)
+                    # print '(Epoch %d / %d) train f1: %f; val_f1: %f' % (
+                    #     self.epoch, self.num_epochs, f1_train_score, f1_val_score)
+                    #
+                    # print "\nImg2Txt Performance"
+                    # print "TRAIN f1: {}; \t p: {}; \t r: {}".format(f1_i2t_t, p_i2t_t, r_i2t_t)
+                    # print "VAL f1: {}; \t p: {}; \t r: {}".format(f1_i2t_v, p_i2t_v, r_i2t_v)
+                    #
+                    # print "\nTxt2Img Performance"
+                    # print "TRAIN f1: {}; \t p: {}; \t r: {}".format(f1_t2i_t, p_t2i_t, r_t2i_t)
+                    # print "VAL f1: {}; \t p: {}; \t r: {}".format(f1_t2i_v, p_t2i_v, r_t2i_v)
 
-                    print "\n\n\n"
+                    print "\n"
 
-
-
-
+        logging.info("Finished {}\n".format(time.strftime('%Y_%m_%d_%H%M')))
         # At the end of training swap the best params into the model
         self.model.params = self.best_params
 

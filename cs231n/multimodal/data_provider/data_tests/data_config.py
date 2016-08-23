@@ -44,6 +44,7 @@ exp_config['target_vocab_fname'] = exp_config['test_vocab']  #TODO:I think this 
 # path to save checkpoints and reports
 exp_config['checkpoint_path'] = root_path + '/data/fashion53k/experiment_results/'
 
+
 ####################################################################
 # Set loss parameters
 ####################################################################
@@ -82,9 +83,11 @@ exp_config['optim_config'] = optim_config
 
 exp_config['lr_decay'] = 0.95
 
-exp_config['print_every'] = 2
+exp_config['print_every'] = 2  # print loss
 exp_config['num_epochs'] = 7
 exp_config['batch_size'] = 5
+
+# todo: check out why results are the same. there might be a seed set somewhere?
 
 
 

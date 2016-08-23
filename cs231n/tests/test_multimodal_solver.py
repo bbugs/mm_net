@@ -1,4 +1,6 @@
 
+import logging
+import time
 from cs231n.multimodal.data_provider.experiment_data import BatchData, EvaluationData
 from cs231n.multimodal.data_provider.cnn_data import CnnData
 from cs231n.multimodal.data_provider.word2vec_data import Word2VecData
@@ -10,8 +12,15 @@ from cs231n.multimodal import multimodal_utils
 import math
 
 ##############################################
+# Setup logger
+##############################################
+fname = data_config.exp_config['checkpoint_path'] + '{}_experiment.log.txt'.format(time.strftime('%Y_%m_%d_%H%M'))
+logging.basicConfig(filename=fname, level=logging.INFO)
+
+##############################################
 # Set batch data object
 ##############################################
+
 print "setting batch data"
 json_fname_train = data_config.exp_config['json_path_train']
 cnn_fname_train = data_config.exp_config['cnn_regions_path_train']
@@ -102,7 +111,6 @@ mm_net.set_local_hyperparams(local_margin=local_margin, local_scale=local_scale,
 ##############################################
 # Train model with solver
 ##############################################
-print "starting training"
 solver = MultiModalSolver(mm_net, batch_data, eval_data_train, eval_data_val,
                           num_items_train, data_config.exp_config, verbose=True)
 # uselocal=uselocal,
