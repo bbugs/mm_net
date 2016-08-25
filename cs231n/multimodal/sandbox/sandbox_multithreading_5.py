@@ -26,7 +26,7 @@ def main():
         exp_configs.append('exp_{}'.format(i))
 
     # set number of worker threads
-    num_worker_threads = 4
+    num_worker_threads = 2
 
     # initialize the queue
     global q
