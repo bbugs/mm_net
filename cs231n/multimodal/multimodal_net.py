@@ -220,18 +220,18 @@ class MultiModalNet(object):
             # make an appropriate y
             y = multimodal_utils.pair_id2y(region2pair_id, word2pair_id)
             local_loss, dscores1 = self.loss_local(sim_region_word, y)
-            loss += local_loss
-            dscores += dscores1
+            loss += local_loss * self.use_local
+            dscores += dscores1 * self.use_local
 
         if self.use_global > 0:
             global_loss, dscores2 = self.loss_global(sim_region_word, region2pair_id, word2pair_id)
-            loss += global_loss
-            dscores += dscores2
+            loss += global_loss * self.use_global
+            dscores += dscores2 * self.use_global
 
         if self.use_associat > 0:
             associat_loss, dscores3 = self.loss_association(sim_region_word, region_word_associat_scores)
-            loss += associat_loss
-            dscores += dscores3
+            loss += associat_loss * self.use_associat
+            dscores += dscores3 * self.use_associat
 
         reg_loss = 0.5 * self.reg * (np.sum(Wi2s * Wi2s) +
                                      np.sum(Wsem * Wsem))
