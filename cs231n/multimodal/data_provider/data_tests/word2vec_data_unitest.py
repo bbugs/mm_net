@@ -1,8 +1,8 @@
 from cs231n.multimodal.data_provider import word2vec_data
-from cs231n.multimodal.data_provider.data_tests import data_config
+from cs231n.multimodal.data_provider.data_tests import test_data_config
 import numpy as np
 
-d = data_config.exp_config
+d = test_data_config.exp_config
 
 dd = word2vec_data.Word2VecData(w2v_vocab_fname=d['word2vec_vocab'], w2v_vectors_fname=d['word2vec_vectors'])
 

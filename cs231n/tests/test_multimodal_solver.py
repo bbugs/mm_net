@@ -7,14 +7,14 @@ from cs231n.multimodal.data_provider.word2vec_data import Word2VecData
 from cs231n.multimodal import multimodal_net
 from cs231n.multimodal.multimodal_solver import MultiModalSolver
 
-from cs231n.multimodal.data_provider.data_tests import data_config
+from cs231n.multimodal.data_provider.data_tests import test_data_config
 from cs231n.multimodal import multimodal_utils
 import math
 
 ##############################################
 # Setup logger
 ##############################################
-fname = data_config.exp_config['checkpoint_path'] + '{}_experiment.log.txt'.format(time.strftime('%Y_%m_%d_%H%M'))
+fname = test_data_config.exp_config['checkpoint_path'] + '{}_experiment.log.txt'.format(time.strftime('%Y_%m_%d_%H%M'))
 logging.basicConfig(filename=fname, level=logging.INFO)
 
 ##############################################
@@ -22,15 +22,15 @@ logging.basicConfig(filename=fname, level=logging.INFO)
 ##############################################
 
 print "setting batch data"
-json_fname_train = data_config.exp_config['json_path_train']
-cnn_fname_train = data_config.exp_config['cnn_regions_path_train']
-num_regions_per_img = data_config.exp_config['num_regions_per_img']
+json_fname_train = test_data_config.exp_config['json_path_train']
+cnn_fname_train = test_data_config.exp_config['cnn_regions_path_train']
+num_regions_per_img = test_data_config.exp_config['num_regions_per_img']
 imgid2region_indices_train = multimodal_utils.mk_toy_img_id2region_indices(json_fname_train,
                                                                            num_regions_per_img=num_regions_per_img,
                                                                            subset_num_items=-1)
 num_items_train = 20  #len(imgid2region_indices_train)  #TODO: change back
-w2v_vocab_fname = data_config.exp_config['word2vec_vocab']
-w2v_vectors_fname = data_config.exp_config['word2vec_vectors']
+w2v_vocab_fname = test_data_config.exp_config['word2vec_vocab']
+w2v_vectors_fname = test_data_config.exp_config['word2vec_vectors']
 
 batch_data = BatchData(json_fname_train, cnn_fname_train,
                        imgid2region_indices_train,
@@ -46,7 +46,7 @@ batch_data = BatchData(json_fname_train, cnn_fname_train,
 # ----------------------------------------------
 print "setting evaluation data for train split"
 # TODO: the evaluation data for both train and val should be with cnn for the full region
-external_vocab_fname = data_config.exp_config['external_vocab']
+external_vocab_fname = test_data_config.exp_config['external_vocab']
 
 eval_data_train = EvaluationData(json_fname_train, cnn_fname_train, imgid2region_indices_train,
                                  w2v_vocab_fname, w2v_vectors_fname,
@@ -55,8 +55,8 @@ eval_data_train = EvaluationData(json_fname_train, cnn_fname_train, imgid2region
 # Val Evaluation Data
 # ----------------------------------------------
 print "setting evaluation data for val split"
-json_fname_val = data_config.exp_config['json_path_val']
-cnn_fname_val = data_config.exp_config['cnn_regions_path_val']
+json_fname_val = test_data_config.exp_config['json_path_val']
+cnn_fname_val = test_data_config.exp_config['cnn_regions_path_val']
 imgid2region_indices_val = multimodal_utils.mk_toy_img_id2region_indices(json_fname_val,
                                                                          num_regions_per_img=num_regions_per_img,
                                                                          subset_num_items=-1)
@@ -69,28 +69,28 @@ eval_data_val = EvaluationData(json_fname_val, cnn_fname_val, imgid2region_indic
 # Set the model
 ##############################################
 print "setting the model"
-img_input_dim = CnnData(cnn_fname=data_config.exp_config['cnn_regions_path_test']).get_cnn_dim()
+img_input_dim = CnnData(cnn_fname=test_data_config.exp_config['cnn_regions_path_test']).get_cnn_dim()
 txt_input_dim = Word2VecData(w2v_vocab_fname, w2v_vectors_fname).get_word2vec_dim()
 
 # hyperparameters
-reg = data_config.exp_config['reg']
-hidden_dim = data_config.exp_config['hidden_dim']
+reg = test_data_config.exp_config['reg']
+hidden_dim = test_data_config.exp_config['hidden_dim']
 
 # local loss settings
-use_local = data_config.exp_config['use_local']
-local_margin = data_config.exp_config['local_margin']
-local_scale = data_config.exp_config['local_scale']
+use_local = test_data_config.exp_config['use_local']
+local_margin = test_data_config.exp_config['local_margin']
+local_scale = test_data_config.exp_config['local_scale']
 
 # global loss settings
-use_global = data_config.exp_config['use_global']
-global_margin = data_config.exp_config['global_margin']
-global_scale = data_config.exp_config['global_scale']
-smooth_num = data_config.exp_config['smooth_num']
-global_method = data_config.exp_config['global_method']
-thrglobalscore = data_config.exp_config['thrglobalscore']
+use_global = test_data_config.exp_config['use_global']
+global_margin = test_data_config.exp_config['global_margin']
+global_scale = test_data_config.exp_config['global_scale']
+smooth_num = test_data_config.exp_config['smooth_num']
+global_method = test_data_config.exp_config['global_method']
+thrglobalscore = test_data_config.exp_config['thrglobalscore']
 
 # associat loss settings
-use_associat = data_config.exp_config['use_associat']
+use_associat = test_data_config.exp_config['use_associat']
 
 # weight scale for weight initialzation
 std_img = math.sqrt(2. / img_input_dim)
@@ -112,7 +112,7 @@ mm_net.set_local_hyperparams(local_margin=local_margin, local_scale=local_scale,
 # Train model with solver
 ##############################################
 solver = MultiModalSolver(mm_net, batch_data, eval_data_train, eval_data_val,
-                          num_items_train, data_config.exp_config, verbose=True)
+                          num_items_train, test_data_config.exp_config, verbose=True)
 # uselocal=uselocal,
 # useglobal=useglobal,
 # update_rule='sgd',

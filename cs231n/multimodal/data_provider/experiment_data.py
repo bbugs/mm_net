@@ -3,6 +3,7 @@ from cs231n.multimodal.data_provider.cnn_data import CnnData, check_num_regions
 from cs231n.multimodal.data_provider.vocab_data import Vocabulary
 from cs231n.multimodal.data_provider.word2vec_data import Word2VecData
 import numpy as np
+from cs231n.multimodal import multimodal_utils
 
 
 class ExperimentData(object):
@@ -136,8 +137,8 @@ class EvaluationData(ExperimentData):
         self.X_img = np.array([])
 
         self.set_features()
-        self.y_true_img2txt = self.y_true_txt2img.T
-        # todo: create evaluation data where the all words are target, but only zappos are correct
+        self.y_true_img2txt = self.y_true_txt2img.T  #todo: remove: txt2img?
+        # todo: create evaluation data where the all words are target, but only zappos are correct (leave this after the models have been trained)
 
     def set_features(self):
         """
@@ -188,3 +189,84 @@ class EvaluationData(ExperimentData):
         self.X_txt = self.w2v_data.get_word_vectors_of_word_list(external_vocab)
 
         return
+
+
+def get_batch_data(exp_config, subset_num_items=-1):
+    """
+    Parameters
+    ----------
+    exp_config
+    subset_num_items": when reading the json file, you can choose
+    to get only the first subset_num_items. For experiments, it should be -1
+
+    Returns
+    -------
+    BatchData object
+    """
+    json_fname_train = exp_config['json_path_train']
+    cnn_fname_train = exp_config['cnn_regions_path_train']
+    num_regions_per_img = exp_config['num_regions_per_img']  # TODO: replace this by the actual num_regions_per_img
+    imgid2region_indices_train = multimodal_utils.mk_toy_img_id2region_indices(json_fname_train,
+                                                                               num_regions_per_img=num_regions_per_img,
+                                                                               subset_num_items=-1)
+    # num_items_train = 20  # len(imgid2region_indices_train)  #TODO: change back or get num_items_train somewhere else
+    w2v_vocab_fname = exp_config['word2vec_vocab']
+    w2v_vectors_fname = exp_config['word2vec_vectors']
+
+    batch_data = BatchData(json_fname_train, cnn_fname_train,
+                           imgid2region_indices_train,
+                           w2v_vocab_fname, w2v_vectors_fname,
+                           subset_num_items=subset_num_items)
+    return batch_data
+
+
+def get_eval_data(exp_config, subset_train=-1, subset_val=-1):
+    """
+
+    Parameters
+    ----------
+    exp_config
+
+    Returns
+    -------
+    eval_data_train
+    eval_data_val
+    """
+    # ______________________________________________
+    # Train Evaluation Data
+    # ----------------------------------------------
+
+    json_fname_train = exp_config['json_path_train']
+    cnn_fname_train = exp_config['cnn_regions_path_train']
+
+    w2v_vocab_fname = exp_config['word2vec_vocab']
+    w2v_vectors_fname = exp_config['word2vec_vectors']
+
+    num_regions_per_img = exp_config['num_regions_per_img']  # TODO: replace this by the actual num_regions_per_img
+    imgid2region_indices_train = multimodal_utils.mk_toy_img_id2region_indices(json_fname_train,
+                                                                               num_regions_per_img=num_regions_per_img,
+                                                                               subset_num_items=-1)
+
+    # TODO: the evaluation data for both train and val should be with cnn for the full region
+    external_vocab_fname = exp_config['external_vocab']
+
+    eval_data_train = EvaluationData(json_fname_train, cnn_fname_train, imgid2region_indices_train,
+                                     w2v_vocab_fname, w2v_vectors_fname,
+                                     external_vocab_fname,
+                                     subset_num_items=subset_train)  # TODO: set to -1 on the real experiments
+    # ______________________________________________
+    # Val Evaluation Data
+    # ----------------------------------------------
+    print "setting evaluation data for val split"
+    json_fname_val = exp_config['json_path_val']
+    cnn_fname_val = exp_config['cnn_regions_path_val']
+    imgid2region_indices_val = multimodal_utils.mk_toy_img_id2region_indices(json_fname_val,
+                                                                             num_regions_per_img=num_regions_per_img,
+                                                                             subset_num_items=-1)
+
+    eval_data_val = EvaluationData(json_fname_val, cnn_fname_val, imgid2region_indices_val,
+                                   w2v_vocab_fname, w2v_vectors_fname,
+                                   external_vocab_fname, subset_num_items=subset_val)  # TODO: set to -1 on the real experiments
+
+    return eval_data_train, eval_data_val
+
