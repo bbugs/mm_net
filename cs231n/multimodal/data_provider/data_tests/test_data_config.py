@@ -54,14 +54,14 @@ exp_config['start_modulation'] = 0.75  # start after 0.75 of epochs
 
 # local loss params
 exp_config['use_local'] = 1.
-exp_config['local_margin'] = 1.  # fixed
-exp_config['local_scale'] = 1.  # fixed - regulate with use_local (kept for compatiblity with matlab code)
+exp_config['local_margin'] = 1.  # keep constant
+exp_config['local_scale'] = 1.  # keep constant - regulate with use_local (kept for compatiblity with matlab code)
 exp_config['use_mil'] = False
 
 # global loss params
 exp_config['use_global'] = 0.
 exp_config['global_margin'] = 40.
-exp_config['global_scale'] = 1.  # fixed - regulate with use_global (kept for compatiblity with matlab code)
+exp_config['global_scale'] = 1.  # keep constant - regulate with use_global (kept for compatiblity with matlab code)
 exp_config['smooth_num'] = 5.
 exp_config['global_method'] = 'maxaccum'  # 'sum'
 exp_config['thrglobalscore'] = False
