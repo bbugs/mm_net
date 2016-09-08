@@ -13,8 +13,6 @@ exp_config['cnn_regions_path_val'] = exp_config['cnn_regions_path'] + '/cnn_fc7_
 exp_config['cnn_regions_path_test'] = exp_config['cnn_regions_path'] + '/cnn_fc7_test.txt'
 
 # Image CNN (Full Image only) features
-# TODO: Make cnn features for full images only
-# TODO: see where num_regions apply
 exp_config['cnn_full_img_path'] = root_path + '/data/fashion53k/full_img/per_split/'
 exp_config['cnn_full_img_path_train'] = exp_config['cnn_full_img_path'] + '/cnn_fc7_train.txt'
 exp_config['cnn_full_img_path_val'] = exp_config['cnn_full_img_path'] + '/cnn_fc7_val.txt'
@@ -34,7 +32,6 @@ exp_config['word2vec_vectors'] = root_path + 'data/word_vects/glove/vocab_vecs.t
 exp_config['external_vocab'] = root_path + 'data/fashion53k/external_vocab/zappos.vocab.txt'
 
 # target vocab (used in alignment_data.py on make_y_true_img2txt)
-#TODO: see where does min_freq applies (perhaps make the clean json alread remove words with less than min_freq)
 exp_config['train_vocab'] = root_path + '/fashion53k/vocab_per_split/vocab_train_min_freq_5.txt'  #
 exp_config['val_vocab'] = root_path + '/fashion53k/vocab_per_split/vocab_val_min_freq_5.txt'  # do we need this ??
 exp_config['test_vocab'] = root_path + '/fashion53k/vocab_per_split/vocab_test_min_freq_5.txt'  # do we need this ??
@@ -57,16 +54,16 @@ exp_config['start_modulation'] = 0.75  # start after 0.75 of epochs
 
 # local loss params
 exp_config['use_local'] = 1.
-exp_config['local_margin'] = 1.
-exp_config['local_scale'] = 1.
+exp_config['local_margin'] = 1.  # fixed
+exp_config['local_scale'] = 1.  # fixed - regulate with use_local (kept for compatiblity with matlab code)
 exp_config['use_mil'] = False
 
 # global loss params
 exp_config['use_global'] = 0.
 exp_config['global_margin'] = 40.
-exp_config['global_scale'] = 1.
+exp_config['global_scale'] = 1.  # fixed - regulate with use_global (kept for compatiblity with matlab code)
 exp_config['smooth_num'] = 5.
-exp_config['global_method'] = 'sum'  # maxaccum
+exp_config['global_method'] = 'maxaccum'  # 'sum'
 exp_config['thrglobalscore'] = False
 
 # association loss params
@@ -87,7 +84,6 @@ exp_config['print_every'] = 2  # print loss
 exp_config['num_epochs'] = 7
 exp_config['batch_size'] = 5
 
-# todo: check out why results are the same. there might be a seed set somewhere?
 
 
 
