@@ -16,9 +16,9 @@ class MultiModalNet(object):
 
     """
 
-    def __init__(self, img_input_dim, txt_input_dim, hidden_dim, weight_scale, reg=0.0,
-                 use_local=0., use_global=0., use_associat=0.,
-                 finetune_cnn=False, finetune_w2v=False, seed=None):
+    def __init__(self, img_input_dim, txt_input_dim, hidden_dim, weight_scale,
+                 use_finetune_cnn, use_finetune_w2v,
+                 reg=0.0, use_local=0., use_global=0., use_associat=0., seed=None):
         """
         In practice, the current recommendation is to use ReLU units
         and use the w = np.random.randn(n) * sqrt(2.0/n), as discussed in He et al..
@@ -51,8 +51,11 @@ class MultiModalNet(object):
         self.use_associat = use_associat
 
         # Set finetuning options
-        self.finetune_cnn = finetune_cnn
-        self.finetune_w2v = finetune_w2v
+        self.use_finetune_cnn = use_finetune_cnn
+        self.use_finetune_w2v = use_finetune_w2v
+
+        self.finetune_cnn = False  # initialize as false and set to true in solver when needed
+        self.finetune_w2v = False  # initialize as false and set to true in solver when needed
 
         # Initialize the weights and biases of the two-layer net. Weights    #
         # should be initialized from a Gaussian with standard deviation equal to   #
@@ -69,11 +72,11 @@ class MultiModalNet(object):
         self.params['Wsem'] = weight_scale['txt'] * np.random.randn(txt_input_dim, hidden_dim)
         self.params['bsem'] = weight_scale['txt'] * np.random.randn(hidden_dim)
 
-        if finetune_cnn:
+        if use_finetune_cnn:
             self.params['Wcnn'] = weight_scale['img'] * np.random.randn(img_input_dim, img_input_dim)
             self.params['bcnn'] = weight_scale['img'] * np.random.randn(img_input_dim)
 
-        if finetune_w2v:
+        if use_finetune_w2v:
             self.params['Ww2v'] = weight_scale['txt'] * np.random.randn(txt_input_dim, txt_input_dim)
             self.params['bw2v'] = weight_scale['txt'] * np.random.randn(txt_input_dim)
 
@@ -279,10 +282,16 @@ class MultiModalNet(object):
         if self.finetune_cnn:
             grads['Wcnn'] = dWcnn + self.reg * Wcnn
             grads['bcnn'] = dbcnn
+        else:
+            grads['Wcnn'] = None
+            grads['bcnn'] = None
 
         if self.finetune_w2v:
             grads['Ww2v'] = dWw2v + self.reg * Ww2v
             grads['bw2v'] = dbw2v
+        else:
+            grads['Ww2v'] = None
+            grads['bw2v'] = None
 
         return loss, grads
 

@@ -98,8 +98,9 @@ std_txt = math.sqrt(2. / txt_input_dim)
 weight_scale = {'img': std_img, 'txt': std_txt}
 
 mm_net = multimodal_net.MultiModalNet(img_input_dim, txt_input_dim, hidden_dim, weight_scale,
-                                      reg=reg, seed=None, finetune_w2v=False, finetune_cnn=False,
-                                      use_local=use_local, use_global=use_global, use_associat=use_associat)
+                                      use_finetune_cnn=False, use_finetune_w2v=False,
+                                      reg=reg, use_local=use_local, use_global=use_global,
+                                      use_associat=use_associat, seed=None)
 # finetuning starts as false and it can be set to true inside the MultiModalSolver after a number of epochs.
 
 mm_net.set_global_score_hyperparams(global_margin=global_margin, global_scale=global_scale,

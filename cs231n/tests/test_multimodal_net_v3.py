@@ -16,8 +16,8 @@ from cs231n.layers import *
 loss_params = {}
 
 loss_params['reg'] = reg = 0.
-loss_params['finetune_cnn'] = finetune_cnn = True
-loss_params['finetune_w2v'] = finetune_w2v = True
+loss_params['use_finetune_cnn'] = use_finetune_cnn = True
+loss_params['use_finetune_w2v'] = use_finetune_w2v = True
 
 # local loss params
 loss_params['use_local'] = use_local = 1.
@@ -70,11 +70,11 @@ X_txt = np.random.randn(n_words, txt_input_dim)
 # Initialize multimodal net
 ####################################################################
 
-mmnet = multimodal_net.MultiModalNet(img_input_dim, txt_input_dim,
-                                     hidden_dim, weight_scale, reg=reg, seed=seed,
-                                     use_local=use_local, use_global=use_global,
-                                     finetune_cnn=finetune_cnn,
-                                     finetune_w2v=finetune_w2v)
+mmnet = multimodal_net.MultiModalNet(img_input_dim, txt_input_dim, hidden_dim, weight_scale,
+                                     use_finetune_cnn=use_finetune_cnn, use_finetune_w2v=use_finetune_w2v,
+                                     reg=reg, use_local=use_local, use_global=use_global, seed=seed)
+mmnet.finetune_cnn = True
+mmnet.finetune_w2v = True
 
 mmnet.set_global_score_hyperparams(global_margin=global_margin, global_scale=global_scale,
                                    smooth_num=smotth_num, global_method=global_method,

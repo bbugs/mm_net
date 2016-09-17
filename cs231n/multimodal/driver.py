@@ -181,7 +181,7 @@ if __name__ == "__main__":
     parser.add_argument('--lr_decay', dest='lr_decay', type=float, default=0.95)  # learning rate decay
 
     # number of threads
-    parser.add_argument("-t", dest="num_threads", default=1, help="number of threads")
+    parser.add_argument("-t", dest="num_threads", default=4, help="number of threads")
 
     args = parser.parse_args()
 

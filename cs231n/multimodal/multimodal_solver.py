@@ -151,10 +151,13 @@ class MultiModalSolver(object):
         loss, grads = self.model.loss(X_img_batch, X_txt_batch,
                                       region2pair_id, word2pair_id)
         self.loss_history.append(loss)
+        #TODO: Check that loss is not exploding
 
         # Perform a parameter update
         for p, w in self.model.params.iteritems():
             dw = grads[p]
+            if dw is None:  # when usefinetune is False, some gradients will be None
+                continue
             config = self.optim_configs[p]
             next_w, next_config = self.update_rule(w, dw, config)
             self.model.params[p] = next_w

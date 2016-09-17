@@ -67,8 +67,9 @@ X_txt = np.random.randn(n_words, txt_input_dim)
 # Initialize multimodal net
 ####################################################################
 
-mmnet = multimodal_net.MultiModalNet(img_input_dim, txt_input_dim, hidden_dim, weight_scale, reg=reg,
-                                     use_local=use_local, use_global=use_global, seed=seed)
+mmnet = multimodal_net.MultiModalNet(img_input_dim, txt_input_dim, hidden_dim, weight_scale,
+                                     use_finetune_cnn=False, use_finetune_w2v=False,
+                                     reg=reg, use_local=use_local, use_global=use_global, seed=seed)
 
 mmnet.set_global_score_hyperparams(global_margin=global_margin, global_scale=global_scale,
                                    smooth_num=smooth_num, global_method=global_method,

@@ -84,9 +84,9 @@ X_txt[:, -1] = 1
 # Initialize multimodal net
 ####################################################################
 
-mmnet = multimodal_net.MultiModalNet(img_input_dim, txt_input_dim, hidden_dim,
-                                     weight_scale, reg=reg, seed=seed,
-                                     use_local=use_local, use_global=use_global)
+mmnet = multimodal_net.MultiModalNet(img_input_dim, txt_input_dim, hidden_dim, weight_scale,
+                                     use_finetune_cnn=False, use_finetune_w2v=False,
+                                     reg=reg, use_local=use_local, use_global=use_global, seed=seed)
 
 Wi2s = mmnet.params['Wi2s']
 Wsem = mmnet.params['Wsem']

@@ -7,7 +7,7 @@ import math
 
 def set_model(exp_config):
     print "setting the model"
-
+    #TODO: make sure that the model is correctly setup with all the values from exp_config
     cnn_fname = exp_config['cnn_regions_path_test']
     w2v_vocab_fname = exp_config['word2vec_vocab']
     w2v_vectors_fname = exp_config['word2vec_vectors']
@@ -40,14 +40,15 @@ def set_model(exp_config):
     std_txt = math.sqrt(2. / txt_input_dim)
     weight_scale = {'img': std_img, 'txt': std_txt}
 
-    mm_net = multimodal_net.MultiModalNet(img_input_dim, txt_input_dim,
-                                          hidden_dim, weight_scale,
-                                          reg=reg, seed=None,
-                                          finetune_w2v=False,
-                                          finetune_cnn=False,
-                                          use_local=use_local,
-                                          use_global=use_global,
-                                          use_associat=use_associat)
+    # finetuning configuration
+    use_finetune_cnn = exp_config['use_finetune_cnn']
+    use_finetune_w2v = exp_config['use_finetune_w2v']
+
+    mm_net = multimodal_net.MultiModalNet(img_input_dim, txt_input_dim, hidden_dim, weight_scale,
+                                          use_finetune_cnn=use_finetune_cnn,
+                                          use_finetune_w2v=use_finetune_w2v,
+                                          reg=reg, use_local=use_local,
+                                          use_global=use_global, use_associat=use_associat, seed=None)
     # finetuning starts as false and it can be set to true inside
     # the MultiModalSolver after a number of epochs.
 
