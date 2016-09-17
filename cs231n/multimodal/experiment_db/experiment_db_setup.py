@@ -10,26 +10,27 @@ Base = declarative_base()
 class Experiment(Base):
     __tablename__ = 'experiment'
     id = Column(Integer, primary_key=True)
-    done = Column(Integer)
-    val_score = Column(Numeric(10, 4))
-    priority = Column(Numeric(10, 4))  # between 0 and 1. Initially randomly assigned
+    done = Column(Boolean)
+    status = Column(String(20))
+    val_score = Column(Numeric(asdecimal=False))
+    priority = Column(Numeric(asdecimal=False))  # between 0 and 1. Initially randomly assigned
 
-    reg = Column(Numeric(20, 10))
+    reg = Column(Numeric(asdecimal=False))
     hidden_dim = Column(Integer)
     use_finetune_cnn = Column(Boolean)
     use_finetune_w2v = Column(Boolean)
 
-    use_local = Column(Numeric(10, 4))
+    use_local = Column(Numeric(asdecimal=False))
     use_mil = Column(Boolean)
 
-    use_global = Column(Numeric)
-    global_margin = Column(Numeric(10, 4))
+    use_global = Column(Numeric(asdecimal=False))
+    global_margin = Column(Numeric(asdecimal=False))
     thrglobalscore = Column(Boolean)
 
-    use_associat = Column(Numeric(10, 4))
+    use_associat = Column(Numeric(asdecimal=False))
 
     update_rule = Column(String(20))
-    learning_rate = Column(Numeric(20, 10))
+    learning_rate = Column(Numeric(asdecimal=False))
 
     UniqueConstraint(reg, hidden_dim, use_finetune_cnn, use_finetune_w2v,
                      use_local, use_mil,
@@ -37,7 +38,7 @@ class Experiment(Base):
                      use_associat,
                      update_rule, learning_rate)
 
-    attributes = Column(PickleType, unique=False)
+    # attributes = Column(PickleType, unique=False)
 
 
 # ##############
