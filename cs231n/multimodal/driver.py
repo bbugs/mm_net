@@ -26,16 +26,23 @@ def run_experiment(exp_config):
     print "starting to train id {}".format(exp_config['id'])
     solver.train()
 
-    return solver
+    return solver.status, solver.best_epoch, \
+           solver.best_val_f1_score, solver.train_f1_of_best_val
 
 
 def worker():
     while True:
         exp_config = q.get()
-        run_experiment(exp_config)
+        start = time.time()
+        status, best_epoch, best_val_f1, train_f1_of_best_val = run_experiment(exp_config)
+        end = time.time()
         row = SESSION.query(Experiment).filter_by(id=exp_config['id']).first()
         print "\n ROW \n", row
         row.done = True
+        row.time = start - end
+        row.status = status
+        row.best_val_f1 = best_val_f1
+        row.train_f1_of_best_val = train_f1_of_best_val
         SESSION.commit()
         q.task_done()
         # write to database that this item has finished

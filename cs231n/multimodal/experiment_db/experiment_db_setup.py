@@ -13,7 +13,10 @@ class Experiment(Base):
     done = Column(Boolean)
     status = Column(String(20))
     time = Column(Numeric(asdecimal=False))
-    val_score = Column(Numeric(asdecimal=False))
+    best_val_f1 = Column(Numeric(asdecimal=False))
+    train_f1_of_best_val = Column(Numeric(asdecimal=False))
+
+    best_epoch = Column(Integer)
     priority = Column(Numeric(asdecimal=False))  # between 0 and 1. Initially randomly assigned
 
     reg = Column(Numeric(asdecimal=False))

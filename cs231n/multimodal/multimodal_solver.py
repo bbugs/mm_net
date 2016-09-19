@@ -96,6 +96,9 @@ class MultiModalSolver(object):
         self.print_every = exp_config['print_every']
         self.verbose = verbose
 
+        self.status = None
+        self.best_epoch = None
+
         # Make sure the update rule exists, then replace the string
         # name with the actual function
         if not hasattr(optim, self.update_rule):  # check if module optim has the attribute update_rule
@@ -113,12 +116,11 @@ class MultiModalSolver(object):
         print "resetting history"
         self.epoch = 0
         self.best_val_f1_score = 0
-        self.best_train_f1_score = 0
+        self.train_f1_of_best_val = 0
         self.best_params = {}
 
         self.loss_history = []
-        self.status = None
-        self.best_epoch = None
+
 
         # img2txt
         self.train_f1_img2txt_history = []
@@ -383,7 +385,8 @@ class MultiModalSolver(object):
                 # keep best weights in self.best_params
                 if f1_val_score > self.best_val_f1_score:
                     self.best_val_f1_score = f1_val_score
-                    self.best_params = {}
+                    self.train_f1_of_best_val = f1_train_score
+                    self.best_epoch = self.epoch
                     for k, v in self.model.params.iteritems():
                         self.best_params[k] = v.copy()
                     report['model'] = self.best_params
@@ -405,15 +408,15 @@ class MultiModalSolver(object):
                     logging.info("id_{} saved report to {}".format(self.exp_config['id'], report_fname))
 
                 # get the best train score
-                if f1_train_score > self.best_train_f1_score:
-                    self.best_train_f1_score = f1_train_score
+                # if f1_train_score > self.best_train_f1_score:
+                #     self.best_train_f1_score = f1_train_score
 
                 if last_it:  # save an endreport on last iteration
                     report['model'] = {}  # no need to save weights on end report
                     time_stamp = time.strftime('%Y_%m_%d_%H%M')
                     end_report_fname = self.exp_config['checkpoint_path'] + \
                                        '/end_report_{0}_tr_{1:.4f}_val_{2:.4f}.pkl'.format(time_stamp,
-                                                                                           self.best_train_f1_score,
+                                                                                           self.train_f1_of_best_val,
                                                                                            self.best_val_f1_score)
 
                     with open(end_report_fname, "wb") as f:
@@ -453,6 +456,7 @@ class MultiModalSolver(object):
 
         logging.info("id_{} Finished {}\n".format(self.exp_config['id'], time.strftime('%Y_%m_%d_%H%M')))
         # At the end of training swap the best params into the model
+        self.status = 'done'
         self.model.params = self.best_params
 
 
