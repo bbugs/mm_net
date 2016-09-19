@@ -5,6 +5,7 @@ from cs231n.multimodal.evaluation import metrics
 import pickle
 import time
 import os
+from cs231n.multimodal import multimodal_utils
 
 
 
@@ -391,7 +392,6 @@ class MultiModalSolver(object):
                         self.best_params[k] = v.copy()
                     report['model'] = self.best_params
 
-                    report_path = self.exp_config['checkpoint_path']
                     report_fname = 'report_valf1_{0:.4f}_id_{1}_hd_{2}_' \
                                    'l_{3:.1f}_g_{4:.1f}_a_{5:.1f}.pkl'.\
                                    format(self.best_val_f1_score,
@@ -401,11 +401,7 @@ class MultiModalSolver(object):
                                           self.exp_config['use_global'],
                                           self.exp_config['use_associat'],
                                           )
-
-                    with open(report_path + report_fname, "wb") as f:
-                        pickle.dump(report, f)
-
-                    logging.info("id_{} saved report to {}".format(self.exp_config['id'], report_fname))
+                    multimodal_utils.write_report(report_fname, report, self.exp_config, self.best_val_f1_score)
 
                 # get the best train score
                 # if f1_train_score > self.best_train_f1_score:
@@ -414,11 +410,12 @@ class MultiModalSolver(object):
                 if last_it:  # save an endreport on last iteration
                     report['model'] = {}  # no need to save weights on end report
                     time_stamp = time.strftime('%Y_%m_%d_%H%M')
-                    end_report_fname = self.exp_config['checkpoint_path'] + \
-                                       '/end_report_{0}_tr_{1:.4f}_val_{2:.4f}.pkl'.format(time_stamp,
-                                                                                           self.train_f1_of_best_val,
-                                                                                           self.best_val_f1_score)
-
+                    end_report_fname = self.exp_config['checkpoint_path']
+                    end_report_fname += '/id_{0}_end_report_{1}_tr_{2:.4f}_val_{3:.4f}.pkl'.format(self.exp_config['id'],
+                                                                                                   time_stamp,
+                                                                                                   self.train_f1_of_best_val,
+                                                                                                   self.best_val_f1_score,
+                                                                                                   )
                     with open(end_report_fname, "wb") as f:
                         pickle.dump(report, f)
                     logging.info("saved report to {}".format(end_report_fname))
@@ -453,10 +450,11 @@ class MultiModalSolver(object):
                     # print "VAL f1: {}; \t p: {}; \t r: {}".format(f1_t2i_v, p_t2i_v, r_t2i_v)
 
                     print "\n"
+            self.status = 'done'
 
         logging.info("id_{} Finished {}\n".format(self.exp_config['id'], time.strftime('%Y_%m_%d_%H%M')))
         # At the end of training swap the best params into the model
-        self.status = 'done'
+
         self.model.params = self.best_params
 
 

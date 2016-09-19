@@ -37,12 +37,13 @@ def worker():
         status, best_epoch, best_val_f1, train_f1_of_best_val = run_experiment(exp_config)
         end = time.time()
         row = SESSION.query(Experiment).filter_by(id=exp_config['id']).first()
-        print "\n ROW \n", row
         row.done = True
-        row.time = start - end
+        row.time = end - start
         row.status = status
+        print "status", status
         row.best_val_f1 = best_val_f1
         row.train_f1_of_best_val = train_f1_of_best_val
+        row.best_epoch = best_epoch
         SESSION.commit()
         q.task_done()
         # write to database that this item has finished
@@ -189,7 +190,7 @@ if __name__ == "__main__":
     parser.add_argument('--lr_decay', dest='lr_decay', type=float, default=0.95)  # learning rate decay
 
     # number of threads
-    parser.add_argument("-t", dest="num_threads", default=2, help="number of threads")
+    parser.add_argument("-t", dest="num_threads", default=4, help="number of threads")
 
     args = parser.parse_args()
 
@@ -201,7 +202,7 @@ if __name__ == "__main__":
     ##############################################
     print "connecting to database"
     db_name = 'sqlite:///' + GLOBAL_CONFIG['experiment_db']
-    engine = create_engine(db_name, echo=True,
+    engine = create_engine(db_name, echo=False,
                            connect_args={'check_same_thread': False}, poolclass=StaticPool)
     Base.metadata.bind = engine
     DBSession = sessionmaker(bind=engine)
