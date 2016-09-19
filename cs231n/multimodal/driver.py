@@ -12,6 +12,7 @@ from sqlalchemy import create_engine, desc, func
 from sqlalchemy.orm import sessionmaker
 
 from cs231n.multimodal.experiment_db.experiment_db_setup import Base, Experiment
+# https://docs.python.org/3/library/queue.html
 
 
 def run_experiment(exp_config):
@@ -20,6 +21,7 @@ def run_experiment(exp_config):
 
     solver = MultiModalSolver(mm_net, BATCH_DATA, EVAL_DATA_TRAIN, EVAL_DATA_VAL,
                               NUM_ITEMS_TRAIN, exp_config, verbose=True)
+    print "starting to train id {}".format(exp_config['id'])
     solver.train()
 
     return solver
@@ -48,7 +50,7 @@ def main(args):
 
     # get list of experiment conditions
     exp_configs_list = []
-    configs = session.query(Experiment).order_by(desc(Experiment.priority))  # get all configs sorted by priority
+    configs = session.query(Experiment).filter_by(done=False).order_by(desc(Experiment.priority))  # get all configs not done sorted by priority
     #todo: check that it has not been done
     # todo: add status
     for c in configs:
@@ -200,7 +202,6 @@ if __name__ == "__main__":
     BATCH_DATA = get_batch_data(GLOBAL_CONFIG, subset_num_items=20)  # TODO: change to -1
     EVAL_DATA_TRAIN, EVAL_DATA_VAL = get_eval_data(GLOBAL_CONFIG, subset_train=50, subset_val=25)  # TODO: change to -1
     NUM_ITEMS_TRAIN = 20  # TODO: change to actual number
-
 
     main(args)
 
