@@ -41,6 +41,7 @@ use_associat = 0.
 use_mil = True
 use_finetune_cnn = True
 use_finetune_w2v = False
+done = False
 update_rule = 'sgd'
 config['use_local'] = use_local
 config['use_global'] = use_global
@@ -49,6 +50,7 @@ config['use_mil'] = use_mil
 config['use_finetune_cnn'] = use_finetune_cnn
 config['use_finetune_w2v'] = use_finetune_w2v
 config['update_rule'] = update_rule
+config['done'] = done
 for reg in np.nditer(regularizations):
     for lr in np.nditer(learning_rates):
         for hd in hidden_dims:
@@ -75,6 +77,7 @@ use_associat = 0.
 use_mil = False
 use_finetune_cnn = True
 use_finetune_w2v = False
+done = False
 update_rule = 'sgd'
 config['use_local'] = use_local
 config['use_global'] = use_global
@@ -85,6 +88,7 @@ config['use_finetune_w2v'] = use_finetune_w2v
 config['update_rule'] = update_rule
 config['global_margin'] = global_margin
 config['thrglobalscore'] = thrglobalscore
+config['done'] = done
 for reg in np.nditer(regularizations):
     for lr in np.nditer(learning_rates):
         for hd in hidden_dims:

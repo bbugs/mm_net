@@ -12,6 +12,7 @@ class Experiment(Base):
     id = Column(Integer, primary_key=True)
     done = Column(Boolean)
     status = Column(String(20))
+    time = Column(Numeric(asdecimal=False))
     val_score = Column(Numeric(asdecimal=False))
     priority = Column(Numeric(asdecimal=False))  # between 0 and 1. Initially randomly assigned
 
