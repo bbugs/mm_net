@@ -4,6 +4,7 @@ import time
 from cs231n.multimodal.data_provider.experiment_data import get_batch_data, get_eval_data
 from cs231n.multimodal.multimodal_solver import MultiModalSolver
 from cs231n.multimodal import experiment
+from sqlalchemy.pool import StaticPool
 # from cs231n.multimodal import data_config
 import argparse
 import threading
@@ -13,6 +14,7 @@ from sqlalchemy.orm import sessionmaker
 
 from cs231n.multimodal.experiment_db.experiment_db_setup import Base, Experiment
 # https://docs.python.org/3/library/queue.html
+# http://docs.sqlalchemy.org/en/latest/dialects/sqlite.html#threading-pooling-behavior
 
 
 def run_experiment(exp_config):
@@ -31,6 +33,10 @@ def worker():
     while True:
         exp_config = q.get()
         run_experiment(exp_config)
+        row = SESSION.query(Experiment).filter_by(id=exp_config['id']).first()
+        print "\n ROW \n", row
+        row.done = True
+        SESSION.commit()
         q.task_done()
         # write to database that this item has finished
         print "finished item {}".format(exp_config['id'])
@@ -40,18 +46,9 @@ def main(args):
 
     global_config = vars(args)
 
-    # connect to database and get the top priority configurations
-    print "connecting to database"
-    db_name = 'sqlite:///' + global_config['experiment_db']
-    engine = create_engine(db_name, echo=True)
-    Base.metadata.bind = engine
-    DBSession = sessionmaker(bind=engine)
-    session = DBSession()
-
     # get list of experiment conditions
     exp_configs_list = []
-    configs = session.query(Experiment).filter_by(done=False).order_by(desc(Experiment.priority))  # get all configs not done sorted by priority
-    #todo: check that it has not been done
+    configs = SESSION.query(Experiment).filter_by(done=False).order_by(desc(Experiment.priority))  # get all configs not done sorted by priority
     # todo: add status
     for c in configs:
         d = vars(c)  # convert to dictionary
@@ -191,6 +188,17 @@ if __name__ == "__main__":
 
     GLOBAL_CONFIG = vars(args)  # convert to ordinary dict
     print GLOBAL_CONFIG
+
+    ##############################################
+    # connect to database and get the top priority configurations
+    ##############################################
+    print "connecting to database"
+    db_name = 'sqlite:///' + GLOBAL_CONFIG['experiment_db']
+    engine = create_engine(db_name, echo=True,
+                           connect_args={'check_same_thread': False}, poolclass=StaticPool)
+    Base.metadata.bind = engine
+    DBSession = sessionmaker(bind=engine)
+    SESSION = DBSession()
 
     ##############################################
     # Setup logger
