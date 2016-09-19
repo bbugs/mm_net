@@ -151,7 +151,6 @@ class MultiModalSolver(object):
         loss, grads = self.model.loss(X_img_batch, X_txt_batch,
                                       region2pair_id, word2pair_id)
         self.loss_history.append(loss)
-        #TODO: Check that loss is not exploding
 
         # Perform a parameter update
         for p, w in self.model.params.iteritems():
@@ -255,18 +254,30 @@ class MultiModalSolver(object):
         iterations_per_epoch = max(self.num_items_train / self.batch_size, 1)
         num_iterations = self.num_epochs * iterations_per_epoch
 
+        has_modulation_started = False
         for t in xrange(num_iterations):
+
             # Modulate do_mil and finetuning
-            if self.epoch > self.start_modulation * self.num_epochs:
+            if not has_modulation_started and self.epoch > self.start_modulation * self.num_epochs:
                 # TODO: print to screen and add to logger whether these have been started
                 if self.use_mil:
                     self.model.do_mil = True
+                    logging.info("do_mil has started")
                 if self.use_finetune_cnn:
                     self.model.finetune_cnn = True
+                    logging.info("finetune_cnn has started")
                 if self.use_finetune_w2v:
                     self.model.finetune_w2v = True
+                    logging.info("finetune_w2v has started")
+                has_modulation_started = True
 
             self._step()
+
+            if t == 0: loss0 = self.loss_history[0]
+            if self.loss_history[t] > 10 * loss0:
+                print "loss is exploiding. ABORT!"
+                logging.info("loss is exploiding. ABORT!")
+                break
 
             # Maybe print training loss
             if t % self.print_every == 0:
