@@ -4,6 +4,8 @@ from cs231n import optim
 from cs231n.multimodal.evaluation import metrics
 import pickle
 import time
+import os
+
 
 
 class MultiModalSolver(object):
@@ -63,7 +65,9 @@ class MultiModalSolver(object):
         self.use_finetune_w2v = exp_config['use_finetune_w2v']
         self.use_mil = exp_config['use_mil']
 
-        self.start_modulation = exp_config['start_modulation'] = 0.75
+        self.start_modulation = exp_config['start_modulation']
+        self.id = exp_config['id']
+
 
         # Train data
         # self.X_img_train = data['X_img_train']
@@ -82,7 +86,7 @@ class MultiModalSolver(object):
         # # Data to evaluate f1 on training and validation set
         # self.
 
-        # Unpack keyword arguments
+        # get optimization parameters
         self.update_rule = exp_config['update_rule']
         self.optim_config = exp_config['optim_config']
         self.lr_decay = exp_config['lr_decay']
@@ -106,12 +110,15 @@ class MultiModalSolver(object):
         manually.
         """
         # Set up some variables for book-keeping
+        print "resetting history"
         self.epoch = 0
         self.best_val_f1_score = 0
         self.best_train_f1_score = 0
         self.best_params = {}
 
         self.loss_history = []
+        self.status = None
+        self.best_epoch = None
 
         # img2txt
         self.train_f1_img2txt_history = []
@@ -250,7 +257,7 @@ class MultiModalSolver(object):
         """
         Run optimization to train the model.
         """
-        logging.info("{} started training".format(time.strftime('%Y_%m_%d_%H%M')))
+        logging.info("id_{} {} started training".format(self.id, time.strftime('%Y_%m_%d_%H%M')))
         iterations_per_epoch = max(self.num_items_train / self.batch_size, 1)
         num_iterations = self.num_epochs * iterations_per_epoch
 
@@ -262,26 +269,27 @@ class MultiModalSolver(object):
                 # TODO: print to screen and add to logger whether these have been started
                 if self.use_mil:
                     self.model.do_mil = True
-                    logging.info("do_mil has started")
+                    logging.info("id_{} do_mil has started".format(self.id))
                 if self.use_finetune_cnn:
                     self.model.finetune_cnn = True
-                    logging.info("finetune_cnn has started")
+                    logging.info("id_{} finetune_cnn has started".format(self.id))
                 if self.use_finetune_w2v:
                     self.model.finetune_w2v = True
-                    logging.info("finetune_w2v has started")
+                    logging.info("id_{} finetune_w2v has started".format(self.id))
                 has_modulation_started = True
 
             self._step()
 
             if t == 0: loss0 = self.loss_history[0]
             if self.loss_history[t] > 10 * loss0:
-                print "loss is exploiding. ABORT!"
+                print "id_{} \t loss is exploiding. ABORT!".format(self.id)
                 logging.info("loss is exploiding. ABORT!")
+                self.status = 'aborted'
                 break
 
             # Maybe print training loss
             if t % self.print_every == 0:
-                msg = 'Epoch: {} / {}. \t Iter {} / {} \t loss: {:.6f}'.format(
+                msg = 'id_{} \t Epoch: {} / {}. \t Iter {} / {} \t loss: {:.6f}'.format(self.id,
                     self.epoch, self.num_epochs, t + 1, num_iterations, self.loss_history[-1])
                 logging.info(msg)
                 if self.verbose:
@@ -295,7 +303,7 @@ class MultiModalSolver(object):
                 for k in self.optim_configs:
                     self.optim_configs[k]['learning_rate'] *= self.lr_decay
 
-            # Check train and val accuracy on the first iteration, the last
+            # Create report, Check train and val accuracy on the first iteration, the last
             # iteration, and at the end of each epoch.
             first_it = (t == 0)
             last_it = (t + 1 == num_iterations)
@@ -303,6 +311,7 @@ class MultiModalSolver(object):
 
                 # Create report
                 report = {}
+                report['id'] = self.id
                 report['loss_history'] = self.loss_history
                 report['iter'] = t
                 report['epoch'] = self.epoch
@@ -379,18 +388,21 @@ class MultiModalSolver(object):
                         self.best_params[k] = v.copy()
                     report['model'] = self.best_params
 
-                    report_fname = self.exp_config['checkpoint_path']
-                    report_fname += 'report_e_{0}_m_{1}_' \
-                                    'l_{2:.1f}_g_{3:.1f}_a_{4:.1f}_' \
-                                    'val_f1_{5:.4f}.pkl'.format(self.epoch, int(self.use_mil),
-                                                                self.exp_config['use_local'],
-                                                                self.exp_config['use_global'],
-                                                                self.exp_config['use_associat'],
-                                                                self.best_val_f1_score)
-                    with open(report_fname, "wb") as f:
+                    report_path = self.exp_config['checkpoint_path']
+                    report_fname = 'report_valf1_{0:.4f}_id_{1}_hd_{2}_' \
+                                   'l_{3:.1f}_g_{4:.1f}_a_{5:.1f}.pkl'.\
+                                   format(self.best_val_f1_score,
+                                          self.id,
+                                          self.model.h,
+                                          self.exp_config['use_local'],
+                                          self.exp_config['use_global'],
+                                          self.exp_config['use_associat'],
+                                          )
+
+                    with open(report_path + report_fname, "wb") as f:
                         pickle.dump(report, f)
 
-                    logging.info("saved report to {}".format(report_fname))
+                    logging.info("id_{} saved report to {}".format(self.exp_config['id'], report_fname))
 
                 # get the best train score
                 if f1_train_score > self.best_train_f1_score:
@@ -408,7 +420,9 @@ class MultiModalSolver(object):
                         pickle.dump(report, f)
                     logging.info("saved report to {}".format(end_report_fname))
 
-                msg = "iter {} \t train_f1 {:.4f} \t val_f1 {:.4f}".format(t+1, f1_train_score, f1_val_score)
+                msg = "id_{} ".format(self.exp_config['id'])
+
+                msg += "iter {} \t train_f1 {:.4f} \t val_f1 {:.4f}".format(t+1, f1_train_score, f1_val_score)
 
                 msg += " \t i2t train p {:.4f} r {:.4f} f1 {:.4f}".format(p_i2t_t, r_i2t_t, f1_i2t_t)
 
@@ -437,7 +451,7 @@ class MultiModalSolver(object):
 
                     print "\n"
 
-        logging.info("Finished {}\n".format(time.strftime('%Y_%m_%d_%H%M')))
+        logging.info("id_{} Finished {}\n".format(self.exp_config['id'], time.strftime('%Y_%m_%d_%H%M')))
         # At the end of training swap the best params into the model
         self.model.params = self.best_params
 
