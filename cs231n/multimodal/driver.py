@@ -49,6 +49,8 @@ def main(args):
     # get list of experiment conditions
     exp_configs_list = []
     configs = session.query(Experiment).order_by(desc(Experiment.priority))  # get all configs sorted by priority
+    #todo: check that it has not been done
+    # todo: add status
     for c in configs:
         d = vars(c)  # convert to dictionary
         del d['_sa_instance_state']  # remove field inhereted by sqlalchemy
@@ -181,17 +183,24 @@ if __name__ == "__main__":
     parser.add_argument('--lr_decay', dest='lr_decay', type=float, default=0.95)  # learning rate decay
 
     # number of threads
-    parser.add_argument("-t", dest="num_threads", default=4, help="number of threads")
+    parser.add_argument("-t", dest="num_threads", default=2, help="number of threads")
 
     args = parser.parse_args()
 
     GLOBAL_CONFIG = vars(args)  # convert to ordinary dict
     print GLOBAL_CONFIG
 
+    ##############################################
+    # Setup logger
+    ##############################################
+    fname = GLOBAL_CONFIG['checkpoint_path'] + '{}_experiment.log.txt'.format(time.strftime('%Y_%m_%d_%H%M'))
+    logging.basicConfig(filename=fname, level=logging.INFO)
+
     # Build constant data
     BATCH_DATA = get_batch_data(GLOBAL_CONFIG, subset_num_items=20)  # TODO: change to -1
     EVAL_DATA_TRAIN, EVAL_DATA_VAL = get_eval_data(GLOBAL_CONFIG, subset_train=50, subset_val=25)  # TODO: change to -1
     NUM_ITEMS_TRAIN = 20  # TODO: change to actual number
+
 
     main(args)
 
