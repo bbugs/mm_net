@@ -285,8 +285,9 @@ class MultiModalSolver(object):
 
             if t == 0: loss0 = self.loss_history[0]
             if self.loss_history[t] > 10 * loss0:
-                print "id_{} \t loss is exploiding. ABORT!".format(self.id)
-                logging.info("loss is exploiding. ABORT!")
+                abort_msg = "id_{} \t loss is exploiding. ABORT!".format(self.id)
+                print abort_msg
+                logging.info(abort_msg)
                 self.status = 'aborted'
                 break
 
@@ -327,11 +328,11 @@ class MultiModalSolver(object):
                 p_i2t_v, r_i2t_v, f1_i2t_v = self.check_performance_img2txt(self.X_img_val, self.X_txt_val,
                                                                             self.y_true_img2txt_val)
 
-                p_t2i_t, r_t2i_t, f1_t2i_t = self.check_performance_txt2img(self.X_img_train, self.X_txt_train,
-                                                                            self.y_true_img2txt_train.T)
-
-                p_t2i_v, r_t2i_v, f1_t2i_v = self.check_performance_txt2img(self.X_img_val, self.X_txt_val,
-                                                                            self.y_true_img2txt_val.T)
+                # p_t2i_t, r_t2i_t, f1_t2i_t = self.check_performance_txt2img(self.X_img_train, self.X_txt_train,
+                #                                                             self.y_true_img2txt_train.T)
+                #
+                # p_t2i_v, r_t2i_v, f1_t2i_v = self.check_performance_txt2img(self.X_img_val, self.X_txt_val,
+                #                                                             self.y_true_img2txt_val.T)
                 # TODO: look into whether it should be that txt2img and img2txt yeild same results
                 # TODO: is check_performance compatible with associat_loss?
 
@@ -340,13 +341,13 @@ class MultiModalSolver(object):
                 report['img2txt']['train_current_performance'] = {'p': p_i2t_t, 'r': r_i2t_t, 'f1': f1_i2t_t}
                 report['img2txt']['val_current_performance'] = {'p': p_i2t_v, 'r': r_i2t_v, 'f1': f1_i2t_v}
 
-                report['txt2img'] = {}
-                report['txt2img']['train_current_performance'] = {'p': p_t2i_t, 'r': r_t2i_t, 'f1': f1_t2i_t}
-                report['txt2img']['val_current_performance'] = {'p': p_t2i_v, 'r': r_t2i_v, 'f1': f1_t2i_v}
+                # report['txt2img'] = {}
+                # report['txt2img']['train_current_performance'] = {'p': p_t2i_t, 'r': r_t2i_t, 'f1': f1_t2i_t}
+                # report['txt2img']['val_current_performance'] = {'p': p_t2i_v, 'r': r_t2i_v, 'f1': f1_t2i_v}
 
                 # overall average f1 of both tasks both tasks img2txt & txt2img
-                f1_train_score = 0.5 * (f1_i2t_t + f1_t2i_t)
-                f1_val_score = 0.5 * (f1_i2t_v + f1_t2i_v)
+                f1_train_score = f1_i2t_t
+                f1_val_score = f1_i2t_v
 
                 # img2txt
                 self.train_f1_img2txt_history.append(f1_i2t_t)
@@ -358,13 +359,13 @@ class MultiModalSolver(object):
                 self.val_recall_img2txt_history.append(r_i2t_v)
 
                 # txt2img
-                self.train_f1_txt2img_history.append(f1_t2i_t)
-                self.train_precision_txt2img_history.append(p_t2i_t)
-                self.train_recall_txt2img_history.append(r_t2i_t)
-
-                self.val_f1_txt2img_history.append(f1_t2i_v)
-                self.val_precision_txt2img_history.append(p_t2i_v)
-                self.val_recall_txt2img_history.append(r_t2i_v)
+                # self.train_f1_txt2img_history.append(f1_t2i_t)
+                # self.train_precision_txt2img_history.append(p_t2i_t)
+                # self.train_recall_txt2img_history.append(r_t2i_t)
+                #
+                # self.val_f1_txt2img_history.append(f1_t2i_v)
+                # self.val_precision_txt2img_history.append(p_t2i_v)
+                # self.val_recall_txt2img_history.append(r_t2i_v)
 
                 report['img2txt']['train_history'] = {'p': self.train_precision_img2txt_history,
                                                       'r': self.train_recall_img2txt_history,
@@ -374,13 +375,13 @@ class MultiModalSolver(object):
                                                     'r': self.val_recall_img2txt_history,
                                                     'f1': self.val_f1_img2txt_history}
 
-                report['txt2img']['train_history'] = {'p': self.train_precision_txt2img_history,
-                                                      'r': self.train_recall_txt2img_history,
-                                                      'f1': self.train_f1_txt2img_history}
-
-                report['txt2img']['val_history'] = {'p': self.val_precision_txt2img_history,
-                                                    'r': self.val_recall_txt2img_history,
-                                                    'f1': self.val_f1_txt2img_history}
+                # report['txt2img']['train_history'] = {'p': self.train_precision_txt2img_history,
+                #                                       'r': self.train_recall_txt2img_history,
+                #                                       'f1': self.train_f1_txt2img_history}
+                #
+                # report['txt2img']['val_history'] = {'p': self.val_precision_txt2img_history,
+                #                                     'r': self.val_recall_txt2img_history,
+                #                                     'f1': self.val_f1_txt2img_history}
 
                 # Check if performance is best so far, and if so save report and
                 # keep best weights in self.best_params
@@ -428,9 +429,9 @@ class MultiModalSolver(object):
 
                 msg += " \t i2t val p {:.4f} r {:.4f} f1 {:.4f}".format(p_i2t_v, r_i2t_v, f1_i2t_v)
 
-                msg += " \t t2i train p {:.4f} r {:.4f} f1 {:.4f}".format(p_t2i_t, r_t2i_t, f1_t2i_t)
-
-                msg += " \t t2i val p {:.4f} r {:.4f} f1 {:.4f}".format(p_t2i_v, r_t2i_v, f1_t2i_v)
+                # msg += " \t t2i train p {:.4f} r {:.4f} f1 {:.4f}".format(p_t2i_t, r_t2i_t, f1_t2i_t)
+                #
+                # msg += " \t t2i val p {:.4f} r {:.4f} f1 {:.4f}".format(p_t2i_v, r_t2i_v, f1_t2i_v)
 
                 logging.info(msg)
 
