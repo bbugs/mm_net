@@ -8,53 +8,60 @@ import os
 
 def write_report(new_report_fname, new_report, exp_config, current_val_f1):
 
-    report_path = exp_config['checkpoint_path']
+    # see if there is another file of the same consition as in ex_config
 
-    # read all reports with the condition hidden_dim, use_local, use_global, use_associat
+    # get old reports with same condition
+    report_path = exp_config['checkpoint_path']
     old_reports = [f.replace('.pkl', '') for
                    f in os.listdir(report_path) if f.startswith("report_valf1_")]
 
-    if len(old_reports) == 0:
-        with open(report_path + new_report_fname, "wb") as fname:
-            pickle.dump(new_report, fname)
+    to_consider_for_delete = []
+    for old_report in old_reports:
+        config = old_report.split("_")
 
+        old_hidden_dim = int(config[6])
+        old_use_local = float(config[8])
+        old_use_global = float(config[10])
+        old_use_associat = float(config[12])
+
+        if (old_use_local == exp_config['use_local'] and
+           old_use_global == exp_config['use_global'] and
+           old_use_associat == exp_config['use_associat'] and
+           old_hidden_dim == exp_config['hidden_dim']):
+            to_consider_for_delete.append(old_report)
+
+    # if there are no potentials to delete, just save the report and return
+    if len(to_consider_for_delete) == 0:
+        # save and return
+        with open(report_path + new_report_fname, "wb") as f:
+            pickle.dump(new_report, f)
         logging.info("id_{} saved report to {}".format(exp_config['id'], new_report_fname))
+        return
 
-    else:
-        for old_report in old_reports:
-            print "\n", old_report
-            config = old_report.split("_")
-            # print config
+    # see whether to keep old report or new one
+    for old_report in to_consider_for_delete:
+        config = old_report.split("_")
+        old_val_f1 = float(config[2])
 
-            val_f1 = float(config[2])
-            exp_id = int(config[4])
-            hidden_dim = int(config[6])
-            use_local = float(config[8])
-            use_global = float(config[10])
-            use_associat = float(config[12])
+        if current_val_f1 > old_val_f1:
+            # delete old report and save new one and return
+            os.remove(report_path + old_report + '.pkl')  # delete
+            with open(report_path + new_report_fname, "wb") as f:  # save
+                pickle.dump(new_report, f)
+            logging.info("id_{} replaced report {} by {}".
+                         format(exp_config['id'], old_report, new_report_fname))
+            return
 
-            if (use_local != exp_config['use_local'] or
-                use_global != exp_config['use_global'] or
-                use_associat != exp_config['use_associat'] or
-                hidden_dim != exp_config['hidden_dim']):
-                print "not this one"
-                continue
+        elif old_val_f1 >= current_val_f1:
+            # no need to save anything. old results are better or just as good
+            return
 
-            if current_val_f1 < val_f1:
-                print "current val f1 {} is less than previous report {}, so skip".format(current_val_f1, val_f1)
-                continue
+        else:
+            msg = "THIS SHOULD NOT HAPPEN... SOMETHING WENT WRONG"
+            logging.info(msg)
+            print msg
+            return
 
-            print new_report_fname + " will be saved"
-            print "previous report " + old_report + " will be deleted"
-            os.remove(report_path + old_report + '.pkl')
-            logging.info("id_{} deleted report {}".format(exp_config['id'], old_report))
-
-            with open(report_path + new_report_fname, "wb") as fname:
-                pickle.dump(new_report, fname)
-
-            logging.info("id_{} saved report to {}".format(exp_config['id'], new_report_fname))
-
-    return
 
 def mk_toy_img_id2region_indices(json_fname, num_regions_per_img, subset_num_items=-1):
 
