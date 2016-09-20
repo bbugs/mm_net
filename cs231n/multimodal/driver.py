@@ -60,7 +60,8 @@ def main(args):
     # todo: add status
     for c in configs:
         d = vars(c)  # convert to dictionary
-        del d['_sa_instance_state']  # remove field inhereted by sqlalchemy
+        if '_sa_instance_state' in d.keys():
+            del d['_sa_instance_state']  # remove field inhereted by sqlalchemy
         d.update(global_config)  # include global config
         d['optim_config'] = {'learning_rate': d['learning_rate']}
         exp_configs_list.append(d)
@@ -71,17 +72,25 @@ def main(args):
     q = Queue.Queue()
 
     # initialize the worker threads
+    threads = []
     for i in range(global_config['num_threads']):
         print "start thread {}".format(i)
         t = threading.Thread(target=worker)
         t.daemon = True
         t.start()
+        threads.append(t)
 
     # put experiments in the queue
     for exp in exp_configs_list:
         q.put(exp)
 
     q.join()       # block until all tasks are done
+
+    # stop workers
+    for i in range(global_config['num_threads']):
+        q.put(None)
+    for t in threads:
+        t.join()
     return
 
 if __name__ == "__main__":
